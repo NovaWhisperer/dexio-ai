@@ -9,7 +9,7 @@ export default function Login() {
   const navigate = useNavigate()
   const { login } = useAuth()
 
-  const [form, setForm] = useState({ email: "", password: "" })
+  const [form, setForm]       = useState({ email: "", password: "" })
   const [loading, setLoading] = useState(false)
 
   function handleChange(e) {
@@ -23,8 +23,8 @@ export default function Login() {
       const data = await api.login(form)
       login(data.user)
       navigate("/chat")
-    } catch (err) {
-      toast.error(err.message || "Sign in failed")
+    } catch {
+      toast.error("Invalid email or password")
     } finally {
       setLoading(false)
     }
@@ -36,13 +36,13 @@ export default function Login() {
         position="top-center"
         toastOptions={{
           style: {
-            background: "#18181f",
-            color: "#e8e6f2",
-            border: "1px solid #2a2a36",
+            background: "#18181b",
+            color: "#f4f4f5",
+            border: "1px solid #27272a",
             fontSize: "13px",
             borderRadius: "10px",
           },
-          error: { iconTheme: { primary: "#f05c6a", secondary: "#18181f" } },
+          error: { iconTheme: { primary: "#f87171", secondary: "#18181b" } },
         }}
       />
 
@@ -52,11 +52,11 @@ export default function Login() {
         </div>
 
         <h1 className="auth-heading">Welcome back</h1>
-        <p className="auth-sub">Apna account mein sign in karo.</p>
+        <p className="auth-sub">Sign in to your AI workspace.</p>
 
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label>Email</label>
+            <label>Email Address</label>
             <input
               name="email"
               type="email"
@@ -65,7 +65,6 @@ export default function Login() {
               placeholder="you@example.com"
               required
               autoFocus
-              autoComplete="email"
             />
           </div>
 
@@ -76,9 +75,8 @@ export default function Login() {
               type="password"
               value={form.password}
               onChange={handleChange}
-              placeholder="Your password"
+              placeholder="••••••••"
               required
-              autoComplete="current-password"
             />
           </div>
 
@@ -87,9 +85,7 @@ export default function Login() {
               <span className="btn-spinner-wrap">
                 <span className="btn-spinner" /> Signing in…
               </span>
-            ) : (
-              "Sign in"
-            )}
+            ) : "Sign in"}
           </button>
         </form>
 

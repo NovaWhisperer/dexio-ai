@@ -10,7 +10,7 @@ export default function Register() {
   const { login } = useAuth()
 
   const [form, setForm] = useState({
-    firstName: "", lastName: "", email: "", password: "",
+    firstName: "", lastName: "", email: "", password: ""
   })
   const [loading, setLoading] = useState(false)
 
@@ -29,8 +29,8 @@ export default function Register() {
       })
       login(data.user)
       navigate("/chat")
-    } catch (err) {
-      toast.error(err.message || "Registration failed")
+    } catch {
+      toast.error("Registration failed. Try again.")
     } finally {
       setLoading(false)
     }
@@ -42,13 +42,13 @@ export default function Register() {
         position="top-center"
         toastOptions={{
           style: {
-            background: "#18181f",
-            color: "#e8e6f2",
-            border: "1px solid #2a2a36",
+            background: "#18181b",
+            color: "#f4f4f5",
+            border: "1px solid #27272a",
             fontSize: "13px",
             borderRadius: "10px",
           },
-          error: { iconTheme: { primary: "#f05c6a", secondary: "#18181f" } },
+          error: { iconTheme: { primary: "#f87171", secondary: "#18181b" } },
         }}
       />
 
@@ -58,12 +58,12 @@ export default function Register() {
         </div>
 
         <h1 className="auth-heading">Create account</h1>
-        <p className="auth-sub">Your AI assistant, personalised for you.</p>
+        <p className="auth-sub">Start your journey with Dexio AI.</p>
 
         <form onSubmit={handleSubmit}>
           <div className="form-row">
             <div className="field">
-              <label>First name</label>
+              <label>First Name</label>
               <input
                 name="firstName"
                 value={form.firstName}
@@ -71,24 +71,22 @@ export default function Register() {
                 placeholder="Arjun"
                 required
                 autoFocus
-                autoComplete="given-name"
               />
             </div>
             <div className="field">
-              <label>Last name</label>
+              <label>Last Name</label>
               <input
                 name="lastName"
                 value={form.lastName}
                 onChange={handleChange}
                 placeholder="Sharma"
                 required
-                autoComplete="family-name"
               />
             </div>
           </div>
 
           <div className="field">
-            <label>Email</label>
+            <label>Email Address</label>
             <input
               name="email"
               type="email"
@@ -96,7 +94,6 @@ export default function Register() {
               onChange={handleChange}
               placeholder="you@example.com"
               required
-              autoComplete="email"
             />
           </div>
 
@@ -110,7 +107,6 @@ export default function Register() {
               placeholder="Min 8 characters"
               required
               minLength={8}
-              autoComplete="new-password"
             />
           </div>
 
@@ -119,9 +115,7 @@ export default function Register() {
               <span className="btn-spinner-wrap">
                 <span className="btn-spinner" /> Creating account…
               </span>
-            ) : (
-              "Create account"
-            )}
+            ) : "Create account"}
           </button>
         </form>
 
