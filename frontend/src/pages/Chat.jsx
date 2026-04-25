@@ -9,36 +9,95 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism"
 import toast, { Toaster } from "react-hot-toast"
 import DexioLogo from "../components/DexioLogo"
 import {
-  Menu, X, Plus, Send, Square, Copy,
+  Menu, X, Plus, Send, Square, Copy, Check,
   Trash2, LogOut, MessageSquare
 } from "lucide-react"
 
-// Markdown code block renderer with syntax highlighting
+// ── Dexio icon for AI message avatar ────────────────────────────────────────
+function DexioIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 40 40"
+      fill="none"
+      style={{ width: "18px", height: "18px", display: "block" }}
+    >
+      <path
+        d="M20 3L35 11.5V28.5L20 37L5 28.5V11.5L20 3Z"
+        fill="#2d1f6e"
+        stroke="#7c3aed"
+        strokeWidth="1.4"
+      />
+      <path
+        d="M14 13H21C25.4 13 28 15.6 28 20C28 24.4 25.4 27 21 27H14V13Z"
+        fill="none"
+        stroke="#a78bfa"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M17 16.5H20.5C23 16.5 24.5 17.9 24.5 20C24.5 22.1 23 23.5 20.5 23.5H17V16.5Z"
+        fill="#7c3aed"
+      />
+      <circle cx="20" cy="7" r="1.5" fill="#a78bfa" />
+    </svg>
+  )
+}
+
+// ── Per-block code renderer with copy button ─────────────────────────────────
+function CodeBlock({ language, value }) {
+  const [copied, setCopied] = useState(false)
+
+  async function copyCode() {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // silently fail
+    }
+  }
+
+  return (
+    <div className="code-block-wrapper">
+      <div className="code-block-header">
+        <span className="code-lang">{language || "code"}</span>
+        <button className="btn-copy-code" onClick={copyCode}>
+          {copied ? <Check size={12} /> : <Copy size={12} />}
+          {copied ? "Copied!" : "Copy code"}
+        </button>
+      </div>
+      <SyntaxHighlighter
+        style={oneDark}
+        language={language || "text"}
+        PreTag="div"
+        customStyle={{
+          borderRadius: "0 0 10px 10px",
+          fontSize: "13px",
+          margin: 0,
+          border: "none",
+          background: "#0c0c12",
+        }}
+      >
+        {value}
+      </SyntaxHighlighter>
+    </div>
+  )
+}
+
+// ── Markdown component map ────────────────────────────────────────────────────
 const MarkdownComponents = {
   code({ inline, className, children, ...props }) {
     const match = /language-(\w+)/.exec(className || "")
+    const value = String(children).replace(/\n$/, "")
     return !inline && match ? (
-      <SyntaxHighlighter
-        style={oneDark}
-        language={match[1]}
-        PreTag="div"
-        customStyle={{
-          borderRadius: "10px",
-          fontSize: "13px",
-          margin: "10px 0",
-          border: "1px solid #2a2a36",
-          background: "#0c0c12",
-        }}
-        {...props}
-      >
-        {String(children).replace(/\n$/, "")}
-      </SyntaxHighlighter>
+      <CodeBlock language={match[1]} value={value} />
     ) : (
       <code className={className} {...props}>
         {children}
       </code>
     )
-  }
+  },
 }
 
 export default function Chat() {
@@ -119,7 +178,11 @@ export default function Chat() {
   // ── Close sidebar on outside click ──────────────────────────────────────
   useEffect(() => {
     function handleOutside(e) {
-      if (sidebarOpen && !e.target.closest(".sidebar") && !e.target.closest(".hamburger-btn")) {
+      if (
+        sidebarOpen &&
+        !e.target.closest(".sidebar") &&
+        !e.target.closest(".hamburger-btn")
+      ) {
         setSidebarOpen(false)
       }
     }
@@ -146,7 +209,7 @@ export default function Chat() {
     })
 
     socket.on("chat-title-updated", ({ chatId, title }) => {
-      setChats(prev => prev.map(c => c._id === chatId ? { ...c, title } : c))
+      setChats(prev => prev.map(c => (c._id === chatId ? { ...c, title } : c)))
     })
 
     return () => {
@@ -174,7 +237,10 @@ export default function Chat() {
 
   // ── Select chat ──────────────────────────────────────────────────────────
   function selectChat(chatId) {
-    if (chatId === activeChatId) { setSidebarOpen(false); return }
+    if (chatId === activeChatId) {
+      setSidebarOpen(false)
+      return
+    }
     setActiveChatId(chatId)
     setWaiting(false)
     stoppedRef.current = false
@@ -217,7 +283,9 @@ export default function Chat() {
     if (!trimmed) return
     try {
       await api.updateChatTitle(chatId, trimmed)
-      setChats(prev => prev.map(c => c._id === chatId ? { ...c, title: trimmed } : c))
+      setChats(prev =>
+        prev.map(c => (c._id === chatId ? { ...c, title: trimmed } : c))
+      )
       toast.success("Chat renamed")
     } catch {
       toast.error("Couldn't rename chat")
@@ -225,8 +293,13 @@ export default function Chat() {
   }
 
   function handleRenameKeyDown(e, chatId) {
-    if (e.key === "Enter") { e.preventDefault(); handleRenameSubmit(chatId) }
-    if (e.key === "Escape") { setRenamingId(null) }
+    if (e.key === "Enter") {
+      e.preventDefault()
+      handleRenameSubmit(chatId)
+    }
+    if (e.key === "Escape") {
+      setRenamingId(null)
+    }
   }
 
   // ── Send message ─────────────────────────────────────────────────────────
@@ -296,7 +369,10 @@ export default function Chat() {
 
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="sidebar-overlay"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
@@ -307,7 +383,10 @@ export default function Chat() {
             <button className="btn-new-chat" onClick={handleNewChat}>
               <Plus size={14} /> New chat
             </button>
-            <button className="btn-icon sidebar-close-btn" onClick={() => setSidebarOpen(false)}>
+            <button
+              className="btn-icon sidebar-close-btn"
+              onClick={() => setSidebarOpen(false)}
+            >
               <X size={16} />
             </button>
           </div>
@@ -330,7 +409,7 @@ export default function Chat() {
                   key={chat._id}
                   className={`chat-item${chat._id === activeChatId ? " active" : ""}`}
                   onClick={() => selectChat(chat._id)}
-                  onDoubleClick={(e) => handleDoubleClick(e, chat)}
+                  onDoubleClick={e => handleDoubleClick(e, chat)}
                   title="Double-click to rename"
                 >
                   {renamingId === chat._id ? (
@@ -349,7 +428,7 @@ export default function Chat() {
                       <span className="chat-item-title">{chat.title}</span>
                       <button
                         className="btn-delete-chat"
-                        onClick={(e) => handleDeleteChat(e, chat._id)}
+                        onClick={e => handleDeleteChat(e, chat._id)}
                         disabled={deletingId === chat._id}
                         title="Delete chat"
                       >
@@ -360,7 +439,9 @@ export default function Chat() {
                 </div>
               ))}
               {chats.length === 0 && (
-                <p className="chat-list-empty">No chats yet — start a new one!</p>
+                <p className="chat-list-empty">
+                  No chats yet — start a new one!
+                </p>
               )}
             </>
           )}
@@ -375,7 +456,11 @@ export default function Chat() {
               </div>
               <div className="user-email">{user?.email}</div>
             </div>
-            <button onClick={handleLogout} title="Logout" className="btn-icon logout-btn">
+            <button
+              onClick={handleLogout}
+              title="Logout"
+              className="btn-icon logout-btn"
+            >
               <LogOut size={15} />
             </button>
           </div>
@@ -385,16 +470,23 @@ export default function Chat() {
       {/* ── Main area ───────────────────────────────────────────────────── */}
       <div className="chat-main">
         <div className="chat-topbar">
-          <button className="btn-icon hamburger-btn" onClick={() => setSidebarOpen(true)}>
+          <button
+            className="btn-icon hamburger-btn"
+            onClick={() => setSidebarOpen(true)}
+          >
             <Menu size={20} />
           </button>
 
           <div className="topbar-center">
             <div
               className="status-dot"
-              style={{ background: connected ? "var(--success)" : "var(--text3)" }}
+              style={{
+                background: connected ? "var(--success)" : "var(--text3)",
+              }}
             />
-            <span>{activeChat ? activeChat.title : "Dexio AI"}</span>
+            <span className="topbar-title">
+              {activeChat ? activeChat.title : "Dexio AI"}
+            </span>
             {!connected && (
               <span className="reconnecting-text">— reconnecting…</span>
             )}
@@ -429,7 +521,9 @@ export default function Chat() {
                 {messages.map((msg, i) => (
                   <div key={i} className={`msg-row ${msg.role}`}>
                     {msg.role === "model" && (
-                      <div className="msg-avatar">D</div>
+                      <div className="msg-avatar">
+                        <DexioIcon />
+                      </div>
                     )}
                     <div className="msg-bubble">
                       {msg.role === "model" ? (
@@ -441,7 +535,7 @@ export default function Chat() {
                             <button
                               className="btn-copy"
                               onClick={() => handleCopy(msg.content)}
-                              title="Copy"
+                              title="Copy response"
                             >
                               <Copy size={12} /> Copy
                             </button>
@@ -455,9 +549,13 @@ export default function Chat() {
                 ))}
                 {waiting && (
                   <div className="msg-row model">
-                    <div className="msg-avatar">D</div>
+                    <div className="msg-avatar">
+                      <DexioIcon />
+                    </div>
                     <div className="typing-bubble">
-                      <span /><span /><span />
+                      <span />
+                      <span />
+                      <span />
                     </div>
                   </div>
                 )}
@@ -474,14 +572,22 @@ export default function Chat() {
               <textarea
                 ref={textareaRef}
                 rows={1}
-                placeholder={activeChatId ? "Message Dexio AI…" : "Select or create a chat first"}
+                placeholder={
+                  activeChatId
+                    ? "Message Dexio AI…"
+                    : "Select or create a chat first"
+                }
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 disabled={!activeChatId || waiting}
               />
               {waiting ? (
-                <button className="btn-stop" onClick={handleStop} title="Stop generation">
+                <button
+                  className="btn-stop"
+                  onClick={handleStop}
+                  title="Stop generation"
+                >
                   <Square size={14} />
                 </button>
               ) : (
@@ -495,7 +601,10 @@ export default function Chat() {
                 </button>
               )}
             </div>
-            <p className="input-hint">Enter to send · Shift+Enter for new line · Double-click chat to rename</p>
+            <p className="input-hint">
+              Enter to send · Shift+Enter for new line · Double-click chat to
+              rename
+            </p>
           </div>
         </div>
       </div>

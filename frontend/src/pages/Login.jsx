@@ -65,6 +65,7 @@ export default function Login() {
               placeholder="you@example.com"
               required
               autoFocus
+              autoComplete="email"
             />
           </div>
 
@@ -77,6 +78,7 @@ export default function Login() {
               onChange={handleChange}
               placeholder="Your password"
               required
+              autoComplete="current-password"
             />
           </div>
 
@@ -85,7 +87,9 @@ export default function Login() {
               <span className="btn-spinner-wrap">
                 <span className="btn-spinner" /> Signing in…
               </span>
-            ) : "Sign in"}
+            ) : (
+              "Sign in"
+            )}
           </button>
         </form>
 

@@ -10,7 +10,7 @@ export default function Register() {
   const { login } = useAuth()
 
   const [form, setForm] = useState({
-    firstName: "", lastName: "", email: "", password: ""
+    firstName: "", lastName: "", email: "", password: "",
   })
   const [loading, setLoading] = useState(false)
 
@@ -71,6 +71,7 @@ export default function Register() {
                 placeholder="Arjun"
                 required
                 autoFocus
+                autoComplete="given-name"
               />
             </div>
             <div className="field">
@@ -81,6 +82,7 @@ export default function Register() {
                 onChange={handleChange}
                 placeholder="Sharma"
                 required
+                autoComplete="family-name"
               />
             </div>
           </div>
@@ -94,6 +96,7 @@ export default function Register() {
               onChange={handleChange}
               placeholder="you@example.com"
               required
+              autoComplete="email"
             />
           </div>
 
@@ -107,6 +110,7 @@ export default function Register() {
               placeholder="Min 8 characters"
               required
               minLength={8}
+              autoComplete="new-password"
             />
           </div>
 
@@ -115,7 +119,9 @@ export default function Register() {
               <span className="btn-spinner-wrap">
                 <span className="btn-spinner" /> Creating account…
               </span>
-            ) : "Create account"}
+            ) : (
+              "Create account"
+            )}
           </button>
         </form>
 
