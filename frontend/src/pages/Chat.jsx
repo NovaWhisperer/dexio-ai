@@ -26,21 +26,36 @@ function CodeBlock({ language, children }) {
 
   return (
     <div className="code-block-wrap">
-      <button className="btn-copy-code" onClick={handleCopy}>
-        <Copy size={11} />
-        {copied ? "Copied!" : "Copy"}
-      </button>
+      {/* Language label + copy button */}
+      <div className="code-block-header">
+        <span className="code-block-lang">{language || "code"}</span>
+        <button className="btn-copy-code" onClick={handleCopy}>
+          <Copy size={11} />
+          {copied ? "Copied!" : "Copy"}
+        </button>
+      </div>
       <SyntaxHighlighter
         style={oneDark}
         language={language || "text"}
         PreTag="div"
+        useInlineStyles={true}
+        wrapLines={false}
         customStyle={{
-          borderRadius: "12px",
+          borderRadius: "0 0 12px 12px",
           fontSize: "13px",
           margin: 0,
           border: "1px solid #27272a",
-          background: "#0c0c0e",
-          paddingTop: "40px",
+          borderTop: "none",
+          background: "#0d0d10",
+          padding: "18px 20px",
+          lineHeight: "1.65",
+          overflowX: "auto",
+        }}
+        codeTagProps={{
+          style: {
+            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+            fontSize: "13px",
+          }
         }}
       >
         {children}

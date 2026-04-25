@@ -788,29 +788,67 @@ input, textarea { font-family: var(--font-body); }
   font-size: 13px;
 }
 
-/* Copy button row above code block */
-.code-block-wrap { position: relative; margin: 12px 0; }
+/* Code block wrapper */
+.code-block-wrap {
+  position: relative;
+  margin: 14px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #27272a;
+}
+
+/* Header bar with language + copy */
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #18181b;
+  border-bottom: 1px solid #27272a;
+  padding: 8px 16px;
+}
+
+.code-block-lang {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #52525b;
+  text-transform: lowercase;
+  letter-spacing: 0.03em;
+}
 
 .btn-copy-code {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(39,39,42,0.9);
-  border: 1px solid var(--border2);
-  color: var(--text3);
+  background: rgba(39,39,42,0.8);
+  border: 1px solid #3f3f46;
+  color: #71717a;
   border-radius: 6px;
-  padding: 4px 10px;
+  padding: 3px 10px;
   font-size: 11px;
   font-family: var(--font-mono);
   display: flex;
   align-items: center;
   gap: 5px;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
   cursor: pointer;
-  z-index: 2;
 }
 
-.btn-copy-code:hover { background: var(--bg4); color: var(--text2); }
+.btn-copy-code:hover {
+  background: #27272a;
+  color: var(--text2);
+  border-color: #52525b;
+}
+
+/* Kill the white/light line highlight SyntaxHighlighter injects */
+.code-block-wrap span[style*="background-color: rgb(40"] { background-color: transparent !important; }
+.code-block-wrap span[style*="background-color: rgba"] { background-color: transparent !important; }
+.code-block-wrap .token.inserted,
+.code-block-wrap .token.deleted { background: transparent !important; }
+
+/* Make sure the pre/div from SyntaxHighlighter has no extra chrome */
+.code-block-wrap > div > div {
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
 
 .msg-bubble-ai ol,
 .msg-bubble-ai ul { padding-left: 22px; margin: 8px 0; }
