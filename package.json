@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "react-hot-toast": "^2.6.0",
+    "react-syntax-highlighter": "^16.1.1"
+  }
+}
