@@ -2,10 +2,12 @@ const userModel = require("../models/user.model")
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 
+const isProduction = process.env.NODE_ENV === "production"
+
 const cookieOptions = {
   httpOnly: true,
-  secure: false,
-  sameSite: "lax",
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
   maxAge: 7 * 24 * 60 * 60 * 1000,
 }
 
@@ -54,8 +56,8 @@ async function loginUser(req, res) {
 async function logoutUser(req, res) {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
   })
   return res.status(200).json({ message: "Logged out successfully" })
 }
