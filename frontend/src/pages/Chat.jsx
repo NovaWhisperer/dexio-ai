@@ -7,6 +7,25 @@ import ReactMarkdown from "react-markdown"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism"
 import toast, { Toaster } from "react-hot-toast"
+
+// oneDark bakes background-color into token-level inline styles (e.g. operator, entity)
+// which renders as semi-transparent white stripe artifacts across lines.
+// Strip backgrounds from all token entries — text colors are untouched.
+const cleanTheme = Object.fromEntries(
+  Object.entries(oneDark).map(([selector, styles]) => {
+    if (selector.startsWith("pre") || selector.startsWith("code")) {
+      return [selector, styles]
+    }
+    return [
+      selector,
+      Object.fromEntries(
+        Object.entries(styles).filter(
+          ([k]) => k !== "background" && k !== "backgroundColor"
+        )
+      ),
+    ]
+  })
+)
 import DexioLogo from "../components/DexioLogo"
 import {
   Menu, X, Plus, Send, Square, Copy, Check,
@@ -68,7 +87,7 @@ function CodeBlock({ language, value }) {
         </button>
       </div>
       <SyntaxHighlighter
-        style={oneDark}
+        style={cleanTheme}
         language={language || "text"}
         PreTag="div"
         customStyle={{
