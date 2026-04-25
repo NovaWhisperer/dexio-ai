@@ -1,8 +1,9 @@
-export default function DexioLogo({ size = "md" }) {
+export default function DexioLogo({ size = "md", showText = true }) {
   const cfg = {
-    sm: { icon: 24, name: 15, ai: 11, gap: 8 },
-    md: { icon: 30, name: 19, ai: 12, gap: 10 },
-    lg: { icon: 38, name: 24, ai: 15, gap: 12 },
+    sm: { icon: 22, name: 14, ai: 10, gap: 7 },
+    md: { icon: 28, name: 17, ai: 11, gap: 9 },
+    lg: { icon: 36, name: 22, ai: 14, gap: 10 },
+    xl: { icon: 44, name: 27, ai: 16, gap: 12 },
   }
   const c = cfg[size] || cfg.md
 
@@ -10,7 +11,7 @@ export default function DexioLogo({ size = "md" }) {
     <div style={{
       display: "inline-flex",
       alignItems: "center",
-      gap: c.gap + "px",
+      gap: showText ? c.gap + "px" : "0",
       width: "fit-content",
       flexShrink: 0,
       whiteSpace: "nowrap",
@@ -18,7 +19,6 @@ export default function DexioLogo({ size = "md" }) {
       padding: 0,
       margin: 0,
     }}>
-
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 40 40"
@@ -32,41 +32,71 @@ export default function DexioLogo({ size = "md" }) {
           flexShrink: 0,
         }}
       >
-        <path d="M20 3L35 11.5V28.5L20 37L5 28.5V11.5L20 3Z" fill="#2d1f6e" stroke="#7c3aed" strokeWidth="1.4" />
-        <path d="M14 13H21C25.4 13 28 15.6 28 20C28 24.4 25.4 27 21 27H14V13Z" fill="none" stroke="#a78bfa" strokeWidth="1.8" strokeLinejoin="round" />
-        <path d="M17 16.5H20.5C23 16.5 24.5 17.9 24.5 20C24.5 22.1 23 23.5 20.5 23.5H17V16.5Z" fill="#7c3aed" />
-        <circle cx="20" cy="7" r="1.5" fill="#a78bfa" />
+        <defs>
+          <linearGradient id="dexio_bg" x1="4" y1="4" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#064e3b" />
+            <stop offset="1" stopColor="#022c22" />
+          </linearGradient>
+          <linearGradient id="dexio_d" x1="13" y1="12" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#10b981" />
+            <stop offset="1" stopColor="#047857" />
+          </linearGradient>
+        </defs>
+
+        {/* Rounded square background */}
+        <rect x="2" y="2" width="36" height="36" rx="10" fill="url(#dexio_bg)" stroke="#065f46" strokeWidth="1.2" />
+
+        {/* D letterform — outer stroke */}
+        <path
+          d="M13 12H21C25.4 12 28.5 15.2 28.5 20C28.5 24.8 25.4 28 21 28H13V12Z"
+          fill="none"
+          stroke="#6ee7b7"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+
+        {/* D letterform — filled body */}
+        <path
+          d="M16.5 15.5H20.5C23.2 15.5 24.8 17.4 24.8 20C24.8 22.6 23.2 24.5 20.5 24.5H16.5V15.5Z"
+          fill="url(#dexio_d)"
+        />
+
+        {/* Accent dot */}
+        <circle cx="28" cy="12" r="2" fill="#10b981" />
       </svg>
 
-      {/* Use <b> and <em> — NOT <span> — to avoid .auth-logo span badge styles */}
-      <b style={{
-        fontFamily: "'Sora', system-ui, sans-serif",
-        fontWeight: 700,
-        fontSize: c.name + "px",
-        color: "#e2d9f3",
-        letterSpacing: "-0.02em",
-        lineHeight: 1,
-        background: "none",
-        padding: 0,
-        margin: 0,
-        border: "none",
-        borderRadius: 0,
-      }}>Dexio</b>
-      <em style={{
-        fontFamily: "'Sora', system-ui, sans-serif",
-        fontWeight: 400,
-        fontStyle: "normal",
-        fontSize: c.ai + "px",
-        color: "#a78bfa",
-        letterSpacing: "0.05em",
-        lineHeight: 1,
-        background: "none",
-        padding: 0,
-        margin: 0,
-        border: "none",
-        borderRadius: 0,
-      }}>AI</em>
-
+      {showText && (
+        <>
+          <b style={{
+            fontFamily: "'Space Grotesk', 'Sora', system-ui, sans-serif",
+            fontWeight: 700,
+            fontSize: c.name + "px",
+            color: "#f4f4f5",
+            letterSpacing: "-0.02em",
+            lineHeight: 1,
+            background: "none",
+            padding: 0,
+            margin: 0,
+            border: "none",
+            borderRadius: 0,
+          }}>Dexio</b>
+          <em style={{
+            fontFamily: "'Space Grotesk', 'Sora', system-ui, sans-serif",
+            fontWeight: 700,
+            fontStyle: "normal",
+            fontSize: c.ai + "px",
+            color: "#10b981",
+            letterSpacing: "0.05em",
+            lineHeight: 1,
+            background: "none",
+            padding: 0,
+            margin: 0,
+            border: "none",
+            borderRadius: 0,
+            marginLeft: "-1px",
+          }}>AI</em>
+        </>
+      )}
     </div>
   )
 }
