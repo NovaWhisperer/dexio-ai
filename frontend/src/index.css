@@ -877,6 +877,22 @@ textarea {
   color: #fff;
 }
 
+/*
+  Fix: oneDark prism theme bakes background-color into certain token types
+  (.token.operator, .token.entity, .token.url, etc.) which renders as
+  those semi-transparent white horizontal stripe artifacts across lines.
+  Strip background from all tokens — text colors are preserved via color.
+*/
+.code-block-wrapper .token {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Also strip any inline style backgrounds applied per-line by wrapLines */
+.code-block-wrapper pre > div > span {
+  background: transparent !important;
+}
+
 /* Override syntax highlighter pre */
 .msg-row.model .msg-bubble pre {
   margin: 10px 0;
