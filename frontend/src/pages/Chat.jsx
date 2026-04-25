@@ -11,21 +11,33 @@ import toast, { Toaster } from "react-hot-toast"
 // oneDark bakes background-color into token-level inline styles (e.g. operator, entity)
 // which renders as semi-transparent white stripe artifacts across lines.
 // Strip backgrounds from all token entries — text colors are untouched.
-const cleanTheme = Object.fromEntries(
-  Object.entries(oneDark).map(([selector, styles]) => {
-    if (selector.startsWith("pre") || selector.startsWith("code")) {
-      return [selector, styles]
-    }
-    return [
+const CODE_BG = "#0c0c12"
+
+// Strip token-level backgrounds (oneDark bakes hsla backgrounds into operators,
+// entities etc. which show as white stripe artifacts on dark backgrounds).
+// Also force the pre root background to match CODE_BG so inherited line-span
+// backgrounds don't create a contrast stripe against the wrapper background.
+const cleanTheme = {
+  ...Object.fromEntries(
+    Object.entries(oneDark).map(([selector, styles]) => [
       selector,
       Object.fromEntries(
         Object.entries(styles).filter(
           ([k]) => k !== "background" && k !== "backgroundColor"
         )
       ),
-    ]
-  })
-)
+    ])
+  ),
+  'pre[class*="language-"]': {
+    ...oneDark['pre[class*="language-"]'],
+    background: CODE_BG,
+    margin: 0,
+  },
+  'code[class*="language-"]': {
+    ...oneDark['code[class*="language-"]'],
+    background: CODE_BG,
+  },
+}
 import DexioLogo from "../components/DexioLogo"
 import {
   Menu, X, Plus, Send, Square, Copy, Check,
@@ -95,7 +107,7 @@ function CodeBlock({ language, value }) {
           fontSize: "13px",
           margin: 0,
           border: "none",
-          background: "#0c0c12",
+          background: CODE_BG,
         }}
       >
         {value}
