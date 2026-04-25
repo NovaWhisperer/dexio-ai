@@ -23,7 +23,7 @@ async function generateResponse(content, memoryContext = "") {
     }
 
     const response = await sarvam.chat.completions({
-        model: "sarvam-30b",
+        model: "sarvam-105b",
         messages: [systemMessage, ...content]
     })
 
