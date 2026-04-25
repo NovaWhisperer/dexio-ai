@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { api } from "../services/api"
 import { useAuth } from "../context/useAuth"
 import DexioLogo from "../components/DexioLogo"
+import toast, { Toaster } from "react-hot-toast"
 
 export default function Register() {
   const navigate = useNavigate()
@@ -11,7 +12,6 @@ export default function Register() {
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "", password: ""
   })
-  const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
   function handleChange(e) {
@@ -20,7 +20,6 @@ export default function Register() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    setError("")
     setLoading(true)
     try {
       const data = await api.register({
@@ -31,7 +30,7 @@ export default function Register() {
       login(data.user)
       navigate("/chat")
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message || "Registration failed")
     } finally {
       setLoading(false)
     }
@@ -39,6 +38,20 @@ export default function Register() {
 
   return (
     <div className="auth-shell">
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "#18181f",
+            color: "#e8e6f2",
+            border: "1px solid #2a2a36",
+            fontSize: "13px",
+            borderRadius: "10px",
+          },
+          error: { iconTheme: { primary: "#f05c6a", secondary: "#18181f" } },
+        }}
+      />
+
       <div className="auth-card">
         <div className="auth-logo">
           <DexioLogo size="md" />
@@ -46,8 +59,6 @@ export default function Register() {
 
         <h1 className="auth-heading">Create account</h1>
         <p className="auth-sub">Your AI assistant, personalised for you.</p>
-
-        {error && <div className="error-msg">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-row">
@@ -100,7 +111,11 @@ export default function Register() {
           </div>
 
           <button className="btn-primary" type="submit" disabled={loading}>
-            {loading ? "Creating account…" : "Create account"}
+            {loading ? (
+              <span className="btn-spinner-wrap">
+                <span className="btn-spinner" /> Creating account…
+              </span>
+            ) : "Create account"}
           </button>
         </form>
 

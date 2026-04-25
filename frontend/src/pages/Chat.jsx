@@ -4,37 +4,66 @@ import { useAuth } from "../context/useAuth"
 import { api } from "../services/api"
 import { connectSocket, disconnectSocket } from "../services/socket"
 import ReactMarkdown from "react-markdown"
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism"
+import toast, { Toaster } from "react-hot-toast"
 import DexioLogo from "../components/DexioLogo"
 import {
-  Menu, X, Plus, Send, Square, Copy, Check,
+  Menu, X, Plus, Send, Square, Copy,
   Trash2, LogOut, MessageSquare
 } from "lucide-react"
 
+// Markdown code block renderer with syntax highlighting
+const MarkdownComponents = {
+  code({ inline, className, children, ...props }) {
+    const match = /language-(\w+)/.exec(className || "")
+    return !inline && match ? (
+      <SyntaxHighlighter
+        style={oneDark}
+        language={match[1]}
+        PreTag="div"
+        customStyle={{
+          borderRadius: "10px",
+          fontSize: "13px",
+          margin: "10px 0",
+          border: "1px solid #2a2a36",
+          background: "#0c0c12",
+        }}
+        {...props}
+      >
+        {String(children).replace(/\n$/, "")}
+      </SyntaxHighlighter>
+    ) : (
+      <code className={className} {...props}>
+        {children}
+      </code>
+    )
+  }
+}
 
 export default function Chat() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
   // ── State ────────────────────────────────────────────────────────────────
-  const [chats, setChats]               = useState([])
+  const [chats, setChats] = useState([])
   const [activeChatId, setActiveChatId] = useState(null)
-  const [messages, setMessages]         = useState([])
-  const [input, setInput]               = useState("")
-  const [waiting, setWaiting]           = useState(false)
-  const [connected, setConnected]       = useState(false)
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState("")
+  const [waiting, setWaiting] = useState(false)
+  const [connected, setConnected] = useState(false)
   const [loadingChats, setLoadingChats] = useState(true)
-  const [loadingMsgs, setLoadingMsgs]   = useState(false)
-  const [deletingId, setDeletingId]     = useState(null)
-  const [sidebarOpen, setSidebarOpen]   = useState(false)
-  const [renamingId, setRenamingId]     = useState(null)
-  const [renameValue, setRenameValue]   = useState("")
-  const [copiedId, setCopiedId]         = useState(null)
+  const [loadingMsgs, setLoadingMsgs] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [renamingId, setRenamingId] = useState(null)
+  const [renameValue, setRenameValue] = useState("")
 
-  const socketRef   = useRef(null)
-  const bottomRef   = useRef(null)
+  const socketRef = useRef(null)
+  const bottomRef = useRef(null)
   const textareaRef = useRef(null)
-  const renameRef   = useRef(null)
-  const stoppedRef  = useRef(false)   // for stop generation
+  const renameRef = useRef(null)
+  const stoppedRef = useRef(false)
 
   // ── Load messages for a chat ─────────────────────────────────────────────
   const loadMessages = useCallback(async (chatId) => {
@@ -43,8 +72,8 @@ export default function Chat() {
     try {
       const data = await api.getChatMessages(chatId)
       setMessages(data.messages.map(m => ({ role: m.role, content: m.content })))
-    } catch (err) {
-      console.error("loadMessages:", err.message)
+    } catch {
+      toast.error("Failed to load messages")
     } finally {
       setLoadingMsgs(false)
     }
@@ -60,8 +89,8 @@ export default function Chat() {
           setActiveChatId(data.chats[0]._id)
           loadMessages(data.chats[0]._id)
         }
-      } catch (err) {
-        console.error("loadChats:", err.message)
+      } catch {
+        toast.error("Failed to load chats")
       } finally {
         setLoadingChats(false)
       }
@@ -82,12 +111,12 @@ export default function Chat() {
     el.style.height = Math.min(el.scrollHeight, 140) + "px"
   }, [input])
 
-  // ── Focus rename input when it appears ───────────────────────────────────
+  // ── Focus rename input ───────────────────────────────────────────────────
   useEffect(() => {
     if (renamingId) renameRef.current?.focus()
   }, [renamingId])
 
-  // ── Close sidebar on outside click (mobile) ──────────────────────────────
+  // ── Close sidebar on outside click ──────────────────────────────────────
   useEffect(() => {
     function handleOutside(e) {
       if (sidebarOpen && !e.target.closest(".sidebar") && !e.target.closest(".hamburger-btn")) {
@@ -103,11 +132,10 @@ export default function Chat() {
     const socket = connectSocket()
     socketRef.current = socket
 
-    socket.on("connect",    () => setConnected(true))
+    socket.on("connect", () => setConnected(true))
     socket.on("disconnect", () => setConnected(false))
 
     socket.on("ai-response", ({ content }) => {
-      // If user stopped generation, discard the response
       if (stoppedRef.current) {
         stoppedRef.current = false
         return
@@ -117,7 +145,6 @@ export default function Chat() {
       setMessages(prev => [...prev, { role: "model", content: clean }])
     })
 
-    // Auto-title: server sends updated title after first message
     socket.on("chat-title-updated", ({ chatId, title }) => {
       setChats(prev => prev.map(c => c._id === chatId ? { ...c, title } : c))
     })
@@ -133,16 +160,15 @@ export default function Chat() {
 
   // ── New chat ─────────────────────────────────────────────────────────────
   async function handleNewChat() {
-    const title = `New Chat`
     try {
-      const data = await api.createChat({ title })
+      const data = await api.createChat({ title: "New Chat" })
       const newChat = data.chat
       setChats(prev => [newChat, ...prev])
       setActiveChatId(newChat._id)
       setMessages([])
       setSidebarOpen(false)
-    } catch (err) {
-      console.error("createChat:", err.message)
+    } catch {
+      toast.error("Couldn't create chat")
     }
   }
 
@@ -170,8 +196,9 @@ export default function Chat() {
         setMessages([])
         if (next) loadMessages(next._id)
       }
-    } catch (err) {
-      console.error("deleteChat:", err.message)
+      toast.success("Chat deleted")
+    } catch {
+      toast.error("Couldn't delete chat")
     } finally {
       setDeletingId(null)
     }
@@ -191,13 +218,14 @@ export default function Chat() {
     try {
       await api.updateChatTitle(chatId, trimmed)
       setChats(prev => prev.map(c => c._id === chatId ? { ...c, title: trimmed } : c))
-    } catch (err) {
-      console.error("rename:", err.message)
+      toast.success("Chat renamed")
+    } catch {
+      toast.error("Couldn't rename chat")
     }
   }
 
   function handleRenameKeyDown(e, chatId) {
-    if (e.key === "Enter")  { e.preventDefault(); handleRenameSubmit(chatId) }
+    if (e.key === "Enter") { e.preventDefault(); handleRenameSubmit(chatId) }
     if (e.key === "Escape") { setRenamingId(null) }
   }
 
@@ -228,13 +256,12 @@ export default function Chat() {
   }
 
   // ── Copy message ─────────────────────────────────────────────────────────
-  async function handleCopy(content, id) {
+  async function handleCopy(content) {
     try {
       await navigator.clipboard.writeText(content)
-      setCopiedId(id)
-      setTimeout(() => setCopiedId(null), 2000)
-    } catch (err) {
-      console.error("copy:", err.message)
+      toast.success("Copied to clipboard", { duration: 1500 })
+    } catch {
+      toast.error("Copy failed")
     }
   }
 
@@ -246,12 +273,26 @@ export default function Chat() {
   }
 
   const activeChat = chats.find(c => c._id === activeChatId)
-  const initials   = user
+  const initials = user
     ? `${user.fullName?.firstName?.[0] ?? ""}${user.fullName?.lastName?.[0] ?? ""}`.toUpperCase()
     : "?"
 
   return (
     <div className="chat-shell">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: "#18181f",
+            color: "#e8e6f2",
+            border: "1px solid #2a2a36",
+            fontSize: "13px",
+            borderRadius: "10px",
+          },
+          success: { iconTheme: { primary: "#4fd4a0", secondary: "#18181f" } },
+          error: { iconTheme: { primary: "#f05c6a", secondary: "#18181f" } },
+        }}
+      />
 
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -266,7 +307,7 @@ export default function Chat() {
             <button className="btn-new-chat" onClick={handleNewChat}>
               <Plus size={14} /> New chat
             </button>
-            <button className="btn-icon sidebar-close-btn" onClick={() => setSidebarOpen(false)} title="Close">
+            <button className="btn-icon sidebar-close-btn" onClick={() => setSidebarOpen(false)}>
               <X size={16} />
             </button>
           </div>
@@ -274,7 +315,11 @@ export default function Chat() {
 
         <div className="chat-list">
           {loadingChats ? (
-            <p className="chat-list-empty">Loading chats…</p>
+            <div className="chat-list-loading">
+              <span className="skeleton" />
+              <span className="skeleton" />
+              <span className="skeleton" />
+            </div>
           ) : (
             <>
               {chats.length > 0 && (
@@ -340,7 +385,6 @@ export default function Chat() {
       {/* ── Main area ───────────────────────────────────────────────────── */}
       <div className="chat-main">
         <div className="chat-topbar">
-          {/* Hamburger — mobile only */}
           <button className="btn-icon hamburger-btn" onClick={() => setSidebarOpen(true)}>
             <Menu size={20} />
           </button>
@@ -359,91 +403,100 @@ export default function Chat() {
 
         {/* ── Messages ──────────────────────────────────────────────────── */}
         <div className="messages-area">
-          {!activeChatId ? (
-            <div className="empty-state">
-              <DexioLogo size="md"/>
-              <h3>Kya baat karni hai aaj?</h3>
-              <p>Create a new chat to get started.</p>
-            </div>
-          ) : loadingMsgs ? (
-            <div className="empty-state">
-              <p style={{ color: "var(--text3)", fontSize: 13 }}>Loading messages…</p>
-            </div>
-          ) : messages.length === 0 && !waiting ? (
-            <div className="empty-state">
-              <div className="empty-icon">D</div>
-              <h3>Chat shuru karo</h3>
-              <p>Type a message below.</p>
-            </div>
-          ) : (
-            <>
-              {messages.map((msg, i) => (
-                <div key={i} className={`msg-row ${msg.role}`}>
-                  <div className="msg-bubble">
-                    {msg.role === "model" ? (
-                      <>
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
-                        <div className="msg-actions">
-                          <button
-                            className="btn-copy"
-                            onClick={() => handleCopy(msg.content, i)}
-                            title="Copy"
-                          >
-                            {copiedId === i
-                              ? <Check size={13} />
-                              : <Copy size={13} />
-                            }
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      msg.content
+          <div className="messages-col">
+            {!activeChatId ? (
+              <div className="empty-state">
+                <DexioLogo size="lg" />
+                <h3>Kya baat karni hai aaj?</h3>
+                <p>Create a new chat to get started.</p>
+              </div>
+            ) : loadingMsgs ? (
+              <div className="empty-state">
+                <div className="msg-skeleton-wrap">
+                  <span className="skeleton skeleton-msg" />
+                  <span className="skeleton skeleton-msg short" />
+                  <span className="skeleton skeleton-msg" />
+                </div>
+              </div>
+            ) : messages.length === 0 && !waiting ? (
+              <div className="empty-state">
+                <DexioLogo size="lg" />
+                <h3>Chat shuru karo</h3>
+                <p>Type a message below to begin.</p>
+              </div>
+            ) : (
+              <>
+                {messages.map((msg, i) => (
+                  <div key={i} className={`msg-row ${msg.role}`}>
+                    {msg.role === "model" && (
+                      <div className="msg-avatar">D</div>
                     )}
+                    <div className="msg-bubble">
+                      {msg.role === "model" ? (
+                        <>
+                          <ReactMarkdown components={MarkdownComponents}>
+                            {msg.content}
+                          </ReactMarkdown>
+                          <div className="msg-actions">
+                            <button
+                              className="btn-copy"
+                              onClick={() => handleCopy(msg.content)}
+                              title="Copy"
+                            >
+                              <Copy size={12} /> Copy
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        msg.content
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-              {waiting && (
-                <div className="typing-bubble">
-                  <span/><span/><span/>
-                </div>
-              )}
-              <div ref={bottomRef} />
-            </>
-          )}
+                ))}
+                {waiting && (
+                  <div className="msg-row model">
+                    <div className="msg-avatar">D</div>
+                    <div className="typing-bubble">
+                      <span /><span /><span />
+                    </div>
+                  </div>
+                )}
+                <div ref={bottomRef} />
+              </>
+            )}
+          </div>
         </div>
 
         {/* ── Input ─────────────────────────────────────────────────────── */}
         <div className="input-area">
-          <div className="input-box">
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              placeholder={activeChatId ? "Message Dexio AI…" : "Select or create a chat first"}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={!activeChatId || waiting}
-            />
-            {waiting ? (
-              <button
-                className="btn-stop"
-                onClick={handleStop}
-                title="Stop generation"
-              >
-                <Square size={14} />
-              </button>
-            ) : (
-              <button
-                className="btn-send"
-                onClick={sendMessage}
-                disabled={!input.trim() || !activeChatId}
-                aria-label="Send message"
-              >
-                <Send size={15} />
-              </button>
-            )}
+          <div className="input-col">
+            <div className="input-box">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                placeholder={activeChatId ? "Message Dexio AI…" : "Select or create a chat first"}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={!activeChatId || waiting}
+              />
+              {waiting ? (
+                <button className="btn-stop" onClick={handleStop} title="Stop generation">
+                  <Square size={14} />
+                </button>
+              ) : (
+                <button
+                  className="btn-send"
+                  onClick={sendMessage}
+                  disabled={!input.trim() || !activeChatId}
+                  aria-label="Send message"
+                >
+                  <Send size={15} />
+                </button>
+              )}
+            </div>
+            <p className="input-hint">Enter to send · Shift+Enter for new line · Double-click chat to rename</p>
           </div>
-          <p className="input-hint">Enter to send · Shift+Enter for new line · Double-click chat to rename</p>
         </div>
       </div>
     </div>

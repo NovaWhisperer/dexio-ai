@@ -3,13 +3,13 @@ import { Link, useNavigate } from "react-router-dom"
 import { api } from "../services/api"
 import { useAuth } from "../context/useAuth"
 import DexioLogo from "../components/DexioLogo"
+import toast, { Toaster } from "react-hot-toast"
 
 export default function Login() {
   const navigate = useNavigate()
   const { login } = useAuth()
 
   const [form, setForm] = useState({ email: "", password: "" })
-  const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
   function handleChange(e) {
@@ -18,14 +18,13 @@ export default function Login() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    setError("")
     setLoading(true)
     try {
       const data = await api.login(form)
       login(data.user)
       navigate("/chat")
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message || "Sign in failed")
     } finally {
       setLoading(false)
     }
@@ -33,15 +32,27 @@ export default function Login() {
 
   return (
     <div className="auth-shell">
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "#18181f",
+            color: "#e8e6f2",
+            border: "1px solid #2a2a36",
+            fontSize: "13px",
+            borderRadius: "10px",
+          },
+          error: { iconTheme: { primary: "#f05c6a", secondary: "#18181f" } },
+        }}
+      />
+
       <div className="auth-card">
         <div className="auth-logo">
-          <DexioLogo size="md"/>
+          <DexioLogo size="md" />
         </div>
 
         <h1 className="auth-heading">Welcome back</h1>
         <p className="auth-sub">Apna account mein sign in karo.</p>
-
-        {error && <div className="error-msg">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="field">
@@ -70,7 +81,11 @@ export default function Login() {
           </div>
 
           <button className="btn-primary" type="submit" disabled={loading}>
-            {loading ? "Signing in…" : "Sign in"}
+            {loading ? (
+              <span className="btn-spinner-wrap">
+                <span className="btn-spinner" /> Signing in…
+              </span>
+            ) : "Sign in"}
           </button>
         </form>
 
