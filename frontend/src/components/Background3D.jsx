@@ -243,9 +243,7 @@ function InteractiveGrid() {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          count={countX * countY}
-          array={positions}
-          itemSize={3}
+          args={[positions, 3]}
         />
       </bufferGeometry>
       <shaderMaterial
