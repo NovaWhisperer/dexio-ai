@@ -839,13 +839,14 @@ input, textarea { font-family: var(--font-body); }
   font-size: 13px;
 }
 
-/* Code block wrapper */
+/* Code block wrapper — breaks out of msg-bubble-ai indent */
 .code-block-wrap {
   position: relative;
-  margin: 14px 0;
-  border-radius: 12px;
+  margin: 14px -12px;  /* negative margin cancels parent padding-left */
+  border-radius: 10px;
   overflow: hidden;
   border: 1px solid #27272a;
+  background: #0d0d10;
 }
 
 /* Header bar with language + copy */
@@ -854,8 +855,14 @@ input, textarea { font-family: var(--font-body); }
   align-items: center;
   justify-content: space-between;
   background: #111113;
-  border-bottom: 1px solid #27272a;
+  border-bottom: 1px solid #1f1f23;
   padding: 7px 14px;
+}
+
+.code-block-lang-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .code-block-lang {
