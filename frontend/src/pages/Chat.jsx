@@ -25,14 +25,35 @@ function CodeBlock({ language, children }) {
     }
   }
 
+  // Capitalize language name for display
+  const displayLang = language
+    ? language.charAt(0).toUpperCase() + language.slice(1)
+    : "Code"
+
   return (
     <div className="code-block-wrap">
-      {/* Language label + copy button */}
       <div className="code-block-header">
-        <span className="code-block-lang">{language || "code"}</span>
+        <div className="code-block-lang-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#52525b", flexShrink: 0 }}>
+            <polyline points="16 18 22 12 16 6" />
+            <polyline points="8 6 2 12 8 18" />
+          </svg>
+          <span className="code-block-lang">{displayLang}</span>
+        </div>
         <button className="btn-copy-code" onClick={handleCopy}>
-          <Copy size={11} />
-          {copied ? "Copied!" : "Copy"}
+          {copied ? (
+            <>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Copied!
+            </>
+          ) : (
+            <>
+              <Copy size={12} />
+              Copy
+            </>
+          )}
         </button>
       </div>
       <SyntaxHighlighter
@@ -43,19 +64,18 @@ function CodeBlock({ language, children }) {
         wrapLines={false}
         customStyle={{
           borderRadius: "0 0 12px 12px",
-          fontSize: "13px",
+          fontSize: "13.5px",
           margin: 0,
-          border: "1px solid #27272a",
-          borderTop: "none",
+          border: "none",
           background: "#0d0d10",
-          padding: "18px 20px",
-          lineHeight: "1.65",
+          padding: "20px 20px",
+          lineHeight: "1.7",
           overflowX: "auto",
         }}
         codeTagProps={{
           style: {
             fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-            fontSize: "13px",
+            fontSize: "13.5px",
           }
         }}
       >
@@ -69,7 +89,7 @@ function CodeBlock({ language, children }) {
 const MarkdownComponents = {
   code({ inline, className, children, ...props }) {
     const match = /language-(\w+)/.exec(className || "")
-    const code = String(children).replace(/\n$/, "")
+    const code  = String(children).replace(/\n$/, "")
     return !inline && match
       ? <CodeBlock language={match[1]}>{code}</CodeBlock>
       : <code className={className} {...props}>{children}</code>
@@ -86,24 +106,24 @@ export default function Chat() {
   const navigate = useNavigate()
 
   // ── State ────────────────────────────────────────────────────────────────
-  const [chats, setChats] = useState([])
+  const [chats, setChats]               = useState([])
   const [activeChatId, setActiveChatId] = useState(null)
-  const [messages, setMessages] = useState([])
-  const [input, setInput] = useState("")
-  const [waiting, setWaiting] = useState(false)
-  const [connected, setConnected] = useState(false)
+  const [messages, setMessages]         = useState([])
+  const [input, setInput]               = useState("")
+  const [waiting, setWaiting]           = useState(false)
+  const [connected, setConnected]       = useState(false)
   const [loadingChats, setLoadingChats] = useState(true)
-  const [loadingMsgs, setLoadingMsgs] = useState(false)
-  const [deletingId, setDeletingId] = useState(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [renamingId, setRenamingId] = useState(null)
-  const [renameValue, setRenameValue] = useState("")
+  const [loadingMsgs, setLoadingMsgs]   = useState(false)
+  const [deletingId, setDeletingId]     = useState(null)
+  const [sidebarOpen, setSidebarOpen]   = useState(false)
+  const [renamingId, setRenamingId]     = useState(null)
+  const [renameValue, setRenameValue]   = useState("")
 
-  const socketRef = useRef(null)
-  const bottomRef = useRef(null)
+  const socketRef   = useRef(null)
+  const bottomRef   = useRef(null)
   const textareaRef = useRef(null)
-  const renameRef = useRef(null)
-  const stoppedRef = useRef(false)
+  const renameRef   = useRef(null)
+  const stoppedRef  = useRef(false)
 
   // ── Load messages ────────────────────────────────────────────────────────
   const loadMessages = useCallback(async (chatId) => {
@@ -176,7 +196,7 @@ export default function Chat() {
     const socket = connectSocket()
     socketRef.current = socket
 
-    socket.on("connect", () => setConnected(true))
+    socket.on("connect",    () => setConnected(true))
     socket.on("disconnect", () => setConnected(false))
 
     socket.on("ai-response", ({ content }) => {
@@ -266,7 +286,7 @@ export default function Chat() {
   }
 
   function handleRenameKeyDown(e, chatId) {
-    if (e.key === "Enter") { e.preventDefault(); handleRenameSubmit(chatId) }
+    if (e.key === "Enter")  { e.preventDefault(); handleRenameSubmit(chatId) }
     if (e.key === "Escape") { setRenamingId(null) }
   }
 
@@ -311,7 +331,7 @@ export default function Chat() {
   }
 
   const activeChat = chats.find(c => c._id === activeChatId)
-  const initials = user
+  const initials   = user
     ? `${user.fullName?.firstName?.[0] ?? ""}${user.fullName?.lastName?.[0] ?? ""}`.toUpperCase()
     : "?"
 
@@ -329,7 +349,7 @@ export default function Chat() {
             borderRadius: "10px",
           },
           success: { iconTheme: { primary: "#10b981", secondary: "#18181b" } },
-          error: { iconTheme: { primary: "#f87171", secondary: "#18181b" } },
+          error:   { iconTheme: { primary: "#f87171", secondary: "#18181b" } },
         }}
       />
 
