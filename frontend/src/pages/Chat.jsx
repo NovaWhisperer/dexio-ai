@@ -69,7 +69,7 @@ function CodeBlock({ language, children }) {
 const MarkdownComponents = {
   code({ inline, className, children, ...props }) {
     const match = /language-(\w+)/.exec(className || "")
-    const code  = String(children).replace(/\n$/, "")
+    const code = String(children).replace(/\n$/, "")
     return !inline && match
       ? <CodeBlock language={match[1]}>{code}</CodeBlock>
       : <code className={className} {...props}>{children}</code>
@@ -86,24 +86,24 @@ export default function Chat() {
   const navigate = useNavigate()
 
   // ── State ────────────────────────────────────────────────────────────────
-  const [chats, setChats]               = useState([])
+  const [chats, setChats] = useState([])
   const [activeChatId, setActiveChatId] = useState(null)
-  const [messages, setMessages]         = useState([])
-  const [input, setInput]               = useState("")
-  const [waiting, setWaiting]           = useState(false)
-  const [connected, setConnected]       = useState(false)
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState("")
+  const [waiting, setWaiting] = useState(false)
+  const [connected, setConnected] = useState(false)
   const [loadingChats, setLoadingChats] = useState(true)
-  const [loadingMsgs, setLoadingMsgs]   = useState(false)
-  const [deletingId, setDeletingId]     = useState(null)
-  const [sidebarOpen, setSidebarOpen]   = useState(false)
-  const [renamingId, setRenamingId]     = useState(null)
-  const [renameValue, setRenameValue]   = useState("")
+  const [loadingMsgs, setLoadingMsgs] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [renamingId, setRenamingId] = useState(null)
+  const [renameValue, setRenameValue] = useState("")
 
-  const socketRef   = useRef(null)
-  const bottomRef   = useRef(null)
+  const socketRef = useRef(null)
+  const bottomRef = useRef(null)
   const textareaRef = useRef(null)
-  const renameRef   = useRef(null)
-  const stoppedRef  = useRef(false)
+  const renameRef = useRef(null)
+  const stoppedRef = useRef(false)
 
   // ── Load messages ────────────────────────────────────────────────────────
   const loadMessages = useCallback(async (chatId) => {
@@ -176,7 +176,7 @@ export default function Chat() {
     const socket = connectSocket()
     socketRef.current = socket
 
-    socket.on("connect",    () => setConnected(true))
+    socket.on("connect", () => setConnected(true))
     socket.on("disconnect", () => setConnected(false))
 
     socket.on("ai-response", ({ content }) => {
@@ -266,7 +266,7 @@ export default function Chat() {
   }
 
   function handleRenameKeyDown(e, chatId) {
-    if (e.key === "Enter")  { e.preventDefault(); handleRenameSubmit(chatId) }
+    if (e.key === "Enter") { e.preventDefault(); handleRenameSubmit(chatId) }
     if (e.key === "Escape") { setRenamingId(null) }
   }
 
@@ -311,7 +311,7 @@ export default function Chat() {
   }
 
   const activeChat = chats.find(c => c._id === activeChatId)
-  const initials   = user
+  const initials = user
     ? `${user.fullName?.firstName?.[0] ?? ""}${user.fullName?.lastName?.[0] ?? ""}`.toUpperCase()
     : "?"
 
@@ -329,7 +329,7 @@ export default function Chat() {
             borderRadius: "10px",
           },
           success: { iconTheme: { primary: "#10b981", secondary: "#18181b" } },
-          error:   { iconTheme: { primary: "#f87171", secondary: "#18181b" } },
+          error: { iconTheme: { primary: "#f87171", secondary: "#18181b" } },
         }}
       />
 
@@ -510,11 +510,14 @@ export default function Chat() {
                               <Copy size={11} /> Copy
                             </button>
                           </div>
+                          <span className="msg-time">{formatTime(msg.time)}</span>
                         </>
                       ) : (
-                        <div className="msg-bubble-user">{msg.content}</div>
+                        <>
+                          <div className="msg-bubble-user">{msg.content}</div>
+                          <span className="msg-time">{formatTime(msg.time)}</span>
+                        </>
                       )}
-                      <span className="msg-time">{formatTime(msg.time)}</span>
                     </div>
 
                   </div>

@@ -857,14 +857,6 @@ textarea {
   }
 }
 
-/* AI bubble — transparent, just text */
-.msg-bubble-ai {
-  color: #e4e4e7;
-  font-size: 15px;
-  line-height: 1.75;
-  word-break: break-word;
-}
-
 /* User bubble — zinc pill */
 .msg-bubble-user {
   background: var(--bg4);
@@ -901,8 +893,17 @@ textarea {
 }
 
 /* Markdown inside AI bubble */
+.msg-bubble-ai {
+  color: #d4d4d8;
+  font-size: 15px;
+  line-height: 1.8;
+  word-break: break-word;
+  padding-left: 12px;
+  border-left: 2px solid rgba(16, 185, 129, 0.3);
+}
+
 .msg-bubble-ai p {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .msg-bubble-ai p:last-child {
@@ -911,12 +912,12 @@ textarea {
 
 .msg-bubble-ai strong {
   font-weight: 600;
-  color: var(--text);
+  color: #f4f4f5;
 }
 
 .msg-bubble-ai em {
   font-style: italic;
-  color: var(--text2);
+  color: #a1a1aa;
 }
 
 .msg-bubble-ai h1,
@@ -924,9 +925,16 @@ textarea {
 .msg-bubble-ai h3 {
   font-family: var(--font-head);
   font-weight: 700;
-  margin: 16px 0 8px;
-  color: var(--text);
+  margin: 20px 0 8px;
+  color: #f4f4f5;
   letter-spacing: -0.2px;
+  line-height: 1.3;
+}
+
+.msg-bubble-ai h1:first-child,
+.msg-bubble-ai h2:first-child,
+.msg-bubble-ai h3:first-child {
+  margin-top: 0;
 }
 
 .msg-bubble-ai h1 {
@@ -942,20 +950,20 @@ textarea {
 }
 
 .msg-bubble-ai code {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--border2);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid #3f3f46;
   border-radius: 5px;
-  padding: 1px 7px;
+  padding: 2px 7px;
   font-size: 12.5px;
   font-family: var(--font-mono);
-  color: var(--accent2);
+  color: #34d399;
 }
 
 .msg-bubble-ai pre {
-  margin: 12px 0;
+  margin: 14px 0;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid #27272a;
 }
 
 .msg-bubble-ai pre code {
@@ -980,9 +988,9 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #18181b;
+  background: #111113;
   border-bottom: 1px solid #27272a;
-  padding: 8px 16px;
+  padding: 7px 14px;
 }
 
 .code-block-lang {
@@ -994,11 +1002,11 @@ textarea {
 }
 
 .btn-copy-code {
-  background: rgba(39, 39, 42, 0.8);
+  background: transparent;
   border: 1px solid #3f3f46;
-  color: #71717a;
-  border-radius: 6px;
-  padding: 3px 10px;
+  color: #52525b;
+  border-radius: 5px;
+  padding: 2px 9px;
   font-size: 11px;
   font-family: var(--font-mono);
   display: flex;
@@ -1009,9 +1017,9 @@ textarea {
 }
 
 .btn-copy-code:hover {
-  background: #27272a;
-  color: var(--text2);
-  border-color: #52525b;
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 /* Kill the white/light line highlight SyntaxHighlighter injects */
@@ -1038,61 +1046,118 @@ textarea {
 
 .msg-bubble-ai ol,
 .msg-bubble-ai ul {
-  padding-left: 22px;
-  margin: 8px 0;
+  padding-left: 20px;
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .msg-bubble-ai li {
-  margin-bottom: 5px;
+  line-height: 1.7;
+}
+
+.msg-bubble-ai ul li {
+  list-style-type: disc;
+}
+
+.msg-bubble-ai ol li {
+  list-style-type: decimal;
 }
 
 .msg-bubble-ai blockquote {
-  border-left: 3px solid var(--border2);
-  padding-left: 14px;
-  color: var(--text2);
-  margin: 10px 0;
+  border-left: 3px solid #3f3f46;
+  padding: 10px 14px;
+  color: #a1a1aa;
+  margin: 12px 0;
   font-style: italic;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0 6px 6px 0;
 }
 
 .msg-bubble-ai a {
   color: var(--accent);
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .msg-bubble-ai a:hover {
   color: var(--accent2);
 }
 
+.msg-bubble-ai hr {
+  border: none;
+  border-top: 1px solid #27272a;
+  margin: 16px 0;
+}
+
+.msg-bubble-ai table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.msg-bubble-ai th {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid #27272a;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #f4f4f5;
+}
+
+.msg-bubble-ai td {
+  border: 1px solid #27272a;
+  padding: 8px 12px;
+  color: #d4d4d8;
+}
+
+.msg-bubble-ai tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
 /* Copy button under AI message */
 .msg-actions {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   opacity: 0;
-  transition: opacity 0.15s;
-  margin-top: 2px;
+  transition: opacity 0.2s;
+  margin-top: 6px;
+  padding-left: 14px;
 }
 
 .msg-row.model:hover .msg-actions {
   opacity: 1;
 }
 
+/* Always visible on mobile — no hover available */
+@media (max-width: 768px) {
+  .msg-actions {
+    opacity: 1;
+  }
+}
+
 .btn-copy {
-  background: none;
-  border: none;
+  background: transparent;
+  border: 1px solid transparent;
   color: var(--text3);
   border-radius: 6px;
-  padding: 4px 8px;
+  padding: 3px 8px;
   display: flex;
   align-items: center;
   gap: 5px;
   font-size: 11px;
   font-family: var(--font-mono);
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .btn-copy:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text2);
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.2);
 }
 
 /* Typing indicator */
