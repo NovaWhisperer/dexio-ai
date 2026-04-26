@@ -28,7 +28,7 @@ function loadStyle() {
           ...mod.oneDark,
           'pre[class*="language-"]': {
             ...mod.oneDark['pre[class*="language-"]'],
-            background: "#000000",
+            background: "#111115",
             border: "none",
             boxShadow: "none",
             margin: 0,
@@ -108,7 +108,7 @@ function CodeBlock({ language, children }) {
             customStyle={{
               margin: 0,
               padding: "18px 20px",
-              background: "#000000",
+              background: "#111115",
               border: "none",
               boxShadow: "none",
               borderRadius: "12px",
