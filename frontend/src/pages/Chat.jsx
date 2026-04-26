@@ -14,10 +14,11 @@ const SyntaxHighlighter = lazy(() =>
   import("react-syntax-highlighter").then(mod => ({ default: mod.Prism }))
 )
 
-// ── Code block with copy button ───────────────────────────────────────────
+// ── Code block with hover copy button ────────────────────────────────────
 function CodeBlock({ language, children }) {
   const [copied, setCopied] = useState(false)
   const [style, setStyle]   = useState(null)
+  const [hovered, setHovered] = useState(false)
 
   useEffect(() => {
     import("react-syntax-highlighter/dist/esm/styles/prism").then(mod => {
@@ -35,42 +36,39 @@ function CodeBlock({ language, children }) {
     }
   }
 
-  const displayLang = language
-    ? language.charAt(0).toUpperCase() + language.slice(1)
-    : "Code"
-
   return (
-    <div className="code-block-wrap">
-      <div className="code-block-header">
-        <div className="code-block-lang-wrap">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#52525b", flexShrink: 0 }}>
-            <polyline points="16 18 22 12 16 6" />
-            <polyline points="8 6 2 12 8 18" />
-          </svg>
-          <span className="code-block-lang">{displayLang}</span>
-        </div>
-        <button className="btn-copy-code" onClick={handleCopy}>
-          {copied ? (
-            <>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              Copied!
-            </>
-          ) : (
-            <>
-              <Copy size={12} />
-              Copy
-            </>
-          )}
-        </button>
-      </div>
+    <div
+      className="code-block-wrap"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Hover-only copy button — floats top-right */}
+      <button
+        className="btn-copy-code"
+        onClick={handleCopy}
+        style={{ opacity: hovered || copied ? 1 : 0 }}
+      >
+        {copied ? (
+          <>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            Copied!
+          </>
+        ) : (
+          <>
+            <Copy size={11} />
+            Copy
+          </>
+        )}
+      </button>
+
       <Suspense fallback={
-        <div style={{ background: "#0d0d10", padding: "20px", borderRadius: "0 0 12px 12px", fontFamily: "monospace", fontSize: 13, color: "#52525b" }}>
+        <pre style={{ background: "#0d0d10", padding: "18px 20px", borderRadius: "10px", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "#a1a1aa", margin: 0, overflowX: "auto" }}>
           {children}
-        </div>
+        </pre>
       }>
-        {style && (
+        {style ? (
           <SyntaxHighlighter
             style={style}
             language={language || "text"}
@@ -78,12 +76,12 @@ function CodeBlock({ language, children }) {
             useInlineStyles={true}
             wrapLines={false}
             customStyle={{
-              borderRadius: "0 0 12px 12px",
+              borderRadius: "10px",
               fontSize: "13.5px",
               margin: 0,
               border: "none",
               background: "#0d0d10",
-              padding: "20px",
+              padding: "18px 20px",
               lineHeight: "1.7",
               overflowX: "auto",
             }}
@@ -96,11 +94,10 @@ function CodeBlock({ language, children }) {
           >
             {children}
           </SyntaxHighlighter>
-        )}
-        {!style && (
-          <div style={{ background: "#0d0d10", padding: "20px", borderRadius: "0 0 12px 12px", fontFamily: "monospace", fontSize: 13, color: "#a1a1aa", overflowX: "auto" }}>
-            <pre style={{ margin: 0 }}>{children}</pre>
-          </div>
+        ) : (
+          <pre style={{ background: "#0d0d10", padding: "18px 20px", borderRadius: "10px", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "#a1a1aa", margin: 0, overflowX: "auto" }}>
+            {children}
+          </pre>
         )}
       </Suspense>
     </div>
