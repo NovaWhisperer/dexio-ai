@@ -1,19 +1,29 @@
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/useAuth"
 import { api } from "../services/api"
 import { connectSocket, disconnectSocket } from "../services/socket"
 import ReactMarkdown from "react-markdown"
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism"
 import toast, { Toaster } from "react-hot-toast"
 import DexioLogo from "../components/DexioLogo"
-import Background3D from "../components/Background3D"
 import { User, Menu, X, Plus, Send, Square, Copy, Trash2, LogOut, MessageSquare } from "lucide-react"
+
+// ── Lazy loaded heavy components ──────────────────────────────────────────
+const Background3D = lazy(() => import("../components/Background3D"))
+const SyntaxHighlighter = lazy(() =>
+  import("react-syntax-highlighter").then(mod => ({ default: mod.Prism }))
+)
 
 // ── Code block with copy button ───────────────────────────────────────────
 function CodeBlock({ language, children }) {
   const [copied, setCopied] = useState(false)
+  const [style, setStyle]   = useState(null)
+
+  useEffect(() => {
+    import("react-syntax-highlighter/dist/esm/styles/prism").then(mod => {
+      setStyle(mod.oneDark)
+    })
+  }, [])
 
   async function handleCopy() {
     try {
@@ -25,7 +35,6 @@ function CodeBlock({ language, children }) {
     }
   }
 
-  // Capitalize language name for display
   const displayLang = language
     ? language.charAt(0).toUpperCase() + language.slice(1)
     : "Code"
@@ -56,31 +65,44 @@ function CodeBlock({ language, children }) {
           )}
         </button>
       </div>
-      <SyntaxHighlighter
-        style={oneDark}
-        language={language || "text"}
-        PreTag="div"
-        useInlineStyles={true}
-        wrapLines={false}
-        customStyle={{
-          borderRadius: "0 0 12px 12px",
-          fontSize: "13.5px",
-          margin: 0,
-          border: "none",
-          background: "#0d0d10",
-          padding: "20px 20px",
-          lineHeight: "1.7",
-          overflowX: "auto",
-        }}
-        codeTagProps={{
-          style: {
-            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-            fontSize: "13.5px",
-          }
-        }}
-      >
-        {children}
-      </SyntaxHighlighter>
+      <Suspense fallback={
+        <div style={{ background: "#0d0d10", padding: "20px", borderRadius: "0 0 12px 12px", fontFamily: "monospace", fontSize: 13, color: "#52525b" }}>
+          {children}
+        </div>
+      }>
+        {style && (
+          <SyntaxHighlighter
+            style={style}
+            language={language || "text"}
+            PreTag="div"
+            useInlineStyles={true}
+            wrapLines={false}
+            customStyle={{
+              borderRadius: "0 0 12px 12px",
+              fontSize: "13.5px",
+              margin: 0,
+              border: "none",
+              background: "#0d0d10",
+              padding: "20px",
+              lineHeight: "1.7",
+              overflowX: "auto",
+            }}
+            codeTagProps={{
+              style: {
+                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                fontSize: "13.5px",
+              }
+            }}
+          >
+            {children}
+          </SyntaxHighlighter>
+        )}
+        {!style && (
+          <div style={{ background: "#0d0d10", padding: "20px", borderRadius: "0 0 12px 12px", fontFamily: "monospace", fontSize: 13, color: "#a1a1aa", overflowX: "auto" }}>
+            <pre style={{ margin: 0 }}>{children}</pre>
+          </div>
+        )}
+      </Suspense>
     </div>
   )
 }
@@ -337,7 +359,9 @@ export default function Chat() {
 
   return (
     <div className="chat-shell">
-      <Background3D variant="chat" />
+      <Suspense fallback={null}>
+        <Background3D variant="chat" />
+      </Suspense>
       <Toaster
         position="top-right"
         toastOptions={{

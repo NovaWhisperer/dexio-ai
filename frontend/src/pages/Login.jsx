@@ -1,10 +1,11 @@
-import { useState } from "react"
+import { useState, lazy, Suspense } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { api } from "../services/api"
 import { useAuth } from "../context/useAuth"
 import DexioLogo from "../components/DexioLogo"
-import Background3D from "../components/Background3D"
 import toast, { Toaster } from "react-hot-toast"
+
+const Background3D = lazy(() => import("../components/Background3D"))
 
 export default function Login() {
   const navigate = useNavigate()
@@ -33,7 +34,9 @@ export default function Login() {
 
   return (
     <div className="auth-shell">
-      <Background3D variant="auth" />
+      <Suspense fallback={null}>
+        <Background3D variant="auth" />
+      </Suspense>
       <Toaster
         position="top-center"
         toastOptions={{

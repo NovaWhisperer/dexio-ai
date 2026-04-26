@@ -208,7 +208,7 @@ function InteractiveGrid({ isMobile = false }) {
       }
     }
     return pos
-  }, [])
+  }, [countX, countY])
 
   const uniforms = useMemo(() => ({
     uTime:     { value: 0 },
