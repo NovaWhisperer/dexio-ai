@@ -81,11 +81,11 @@ function CodeBlock({ language, children }) {
             useInlineStyles={true}
             wrapLines={false}
             customStyle={{
-              borderRadius: "10px",
+              borderRadius: "12px",
               fontSize: "13px",
               margin: 0,
               border: "none",
-              background: "#0d0d10",
+              background: "#0a0a0c",
               padding: "18px 20px",
               lineHeight: "1.75",
               overflowX: "auto",
