@@ -49,7 +49,6 @@ const auroraFragmentShader = `
 
     vec3 color = vec3(0.01, 0.01, 0.02);
 
-    // Emerald-tinted palette instead of cyan/purple
     vec3 emerald = vec3(0.06, 0.73, 0.51);
     vec3 teal    = vec3(0.02, 0.45, 0.35);
     vec3 dark    = vec3(0.01, 0.12, 0.09);
@@ -87,20 +86,23 @@ const auroraFragmentShader = `
 function AuroraShader({ opacity = 1 }) {
   const materialRef = useRef(null)
   const { size } = useThree()
+  // Use THREE.Timer instead of THREE.Clock to avoid deprecation warning
+  const timerRef = useRef(new THREE.Timer())
 
   const uniforms = useMemo(() => ({
     uTime:       { value: 0 },
     uResolution: { value: new THREE.Vector2(size.width, size.height) }
   }), [size])
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!materialRef.current) return
-    materialRef.current.uniforms.uTime.value = state.clock.elapsedTime
+    timerRef.current.update()
+    materialRef.current.uniforms.uTime.value = timerRef.current.getElapsed()
     materialRef.current.uniforms.uResolution.value.set(size.width, size.height)
   })
 
   return (
-    <mesh renderOrder={-1} scale={[1, 1, 1]}>
+    <mesh renderOrder={-1}>
       <planeGeometry args={[2, 2]} />
       <shaderMaterial
         ref={materialRef}
@@ -162,13 +164,14 @@ const gridFragmentShader = `
   }
 `
 
-function InteractiveGrid({ isMobile = false }) {
+function InteractiveGrid() {
   const { camera } = useThree()
   const materialRef    = useRef(null)
   const targetMousePos = useRef(new THREE.Vector3(0, 0, 0))
   const activeRef      = useRef(0)
   const isMovingRef    = useRef(false)
   const pointerRef     = useRef(new THREE.Vector2(0, 0))
+  const timerRef       = useRef(new THREE.Timer())
 
   useEffect(() => {
     let timeout
@@ -192,8 +195,8 @@ function InteractiveGrid({ isMobile = false }) {
     }
   }, [])
 
-  const countX  = isMobile ? 55 : 100
-  const countY  = isMobile ? 32 : 60
+  const countX  = 100
+  const countY  = 60
   const spacing = 0.45
 
   const positions = useMemo(() => {
@@ -216,12 +219,13 @@ function InteractiveGrid({ isMobile = false }) {
     uTime:     { value: 0 },
     uMousePos: { value: new THREE.Vector3() },
     uActive:   { value: 0 },
-    uColor:    { value: new THREE.Color("#10b981") }, // emerald dots
+    uColor:    { value: new THREE.Color("#10b981") },
   }), [])
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!materialRef.current) return
-    materialRef.current.uniforms.uTime.value = state.clock.elapsedTime
+    timerRef.current.update()
+    materialRef.current.uniforms.uTime.value = timerRef.current.getElapsed()
 
     activeRef.current = THREE.MathUtils.lerp(
       activeRef.current,
@@ -261,9 +265,29 @@ function InteractiveGrid({ isMobile = false }) {
   )
 }
 
+// ── Mobile CSS-only fallback background ───────────────────────────────────
+function MobileFallback({ variant }) {
+  return (
+    <div style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 0,
+      pointerEvents: "none",
+      background: variant === "auth"
+        ? "radial-gradient(ellipse 80% 60% at 50% 100%, rgba(16,185,129,0.18) 0%, transparent 70%), #09090b"
+        : "radial-gradient(ellipse 60% 40% at 50% 100%, rgba(16,185,129,0.08) 0%, transparent 60%), #09090b",
+    }} />
+  )
+}
+
 // ── Main export ───────────────────────────────────────────────────────────
 export default function Background3D({ variant = "chat" }) {
+  // Skip WebGL entirely on mobile — prevents context loss crash and saves battery
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768
+
+  if (isMobile) {
+    return <MobileFallback variant={variant} />
+  }
 
   return (
     <div style={{
@@ -275,25 +299,22 @@ export default function Background3D({ variant = "chat" }) {
       pointerEvents: "none",
     }}>
       <WebGLErrorBoundary
-        fallback={
-          <div style={{ position: "fixed", inset: 0, background: "#09090b" }} />
-        }
+        fallback={<MobileFallback variant={variant} />}
       >
         <Canvas
           camera={{ position: [0, 0, 5], fov: 60 }}
-          dpr={isMobile ? [1, 1] : [1, 1.5]}
+          dpr={[1, 1.5]}
           style={{ position: "absolute", inset: 0 }}
         >
-          {/* Auth — full aurora. Chat — very subtle aurora (opacity wrapper) */}
           {variant === "auth"
             ? <AuroraShader />
             : <AuroraShader opacity={0.25} />
           }
-          <InteractiveGrid isMobile={isMobile} />
+          <InteractiveGrid />
         </Canvas>
       </WebGLErrorBoundary>
 
-      {/* Vignette — stronger on chat to keep text readable */}
+      {/* Vignette */}
       <div style={{
         position: "absolute",
         inset: 0,

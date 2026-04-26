@@ -475,9 +475,13 @@ export default function Chat() {
         }}
       />
 
-      {/* Mobile overlay */}
+      {/* Mobile overlay — full screen tap to close */}
       {sidebarOpen && (
-        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="sidebar-overlay"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close sidebar"
+        />
       )}
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}

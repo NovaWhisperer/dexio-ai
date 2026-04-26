@@ -55,14 +55,6 @@ input, textarea { font-family: var(--font-body); }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
 
-/* ── Glass utility ──────────────────────────────────────────────────────── */
-.glass {
-  background: rgba(24,24,27,0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.06);
-}
-
 /* ── Glass utilities ────────────────────────────────────────────────────── */
 .glass {
   background: rgba(10,10,15,0.45);
@@ -104,12 +96,13 @@ input, textarea { font-family: var(--font-body); }
   padding: 24px 16px;
   position: relative;
   z-index: 1;
+  overflow-y: auto;
 }
 
 @media (max-width: 480px) {
   .auth-shell {
     align-items: flex-start;
-    padding-top: 48px;
+    padding: 40px 16px 40px;
   }
 }
 
@@ -386,8 +379,16 @@ input, textarea { font-family: var(--font-body); }
 .btn-icon:hover { background: rgba(255,255,255,0.05); color: var(--text2); }
 
 .sidebar-close-btn { display: none; }
+
 @media (max-width: 768px) {
-  .sidebar-close-btn { display: flex; }
+  .sidebar-close-btn {
+    display: flex;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    color: var(--text2);
+  }
 }
 
 .chat-list {
@@ -909,11 +910,23 @@ input, textarea { font-family: var(--font-body); }
   .code-block-wrap {
     margin: 12px 0;
     border-radius: 8px;
+    /* Force horizontal scroll to work on iOS */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
   }
 
   .code-fallback {
     font-size: 12px;
     padding: 14px 16px;
+  }
+
+  /* Ensure pre inside code block scrolls on mobile */
+  .code-block-wrap pre {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
+    white-space: pre !important;
   }
 }
 
