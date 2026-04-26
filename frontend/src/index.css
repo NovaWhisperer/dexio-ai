@@ -1143,7 +1143,82 @@ input, textarea { font-family: var(--font-body); }
   .input-hint { font-size: 10px; }
 }
 
-/* ── Animations ─────────────────────────────────────────────────────────── */
+/* ── Suggested prompt chips ─────────────────────────────────────────────── */
+.prompt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+  max-width: 480px;
+}
+
+.prompt-chip {
+  background: rgba(16,185,129,0.06);
+  border: 1px solid rgba(16,185,129,0.2);
+  color: var(--text2);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
+}
+
+.prompt-chip:hover {
+  background: rgba(16,185,129,0.12);
+  border-color: rgba(16,185,129,0.4);
+  color: var(--accent2);
+  transform: translateY(-1px);
+}
+
+.prompt-chip:active { transform: translateY(0); }
+
+/* ── Scroll to bottom button ────────────────────────────────────────────── */
+.btn-scroll-bottom {
+  position: absolute;
+  bottom: 110px;
+  right: 28px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(24,24,27,0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  transition: background 0.2s, color 0.2s, transform 0.15s, border-color 0.2s;
+  animation: fadeIn 0.2s ease both;
+  z-index: 10;
+}
+
+.btn-scroll-bottom:hover {
+  background: rgba(16,185,129,0.15);
+  border-color: rgba(16,185,129,0.3);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+
+/* ── Streaming cursor blink ─────────────────────────────────────────────── */
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--accent);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursorBlink 0.8s ease infinite;
+  border-radius: 1px;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }

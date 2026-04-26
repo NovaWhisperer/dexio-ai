@@ -146,6 +146,22 @@ export default function Chat() {
   const textareaRef = useRef(null)
   const renameRef   = useRef(null)
   const stoppedRef  = useRef(false)
+  const messagesAreaRef = useRef(null)
+
+  // ── Streaming state ──────────────────────────────────────────────────────
+  const [streamingId, setStreamingId]     = useState(null)
+  const streamingContentRef               = useRef("")
+
+  // ── Scroll to bottom button ──────────────────────────────────────────────
+  const [showScrollBtn, setShowScrollBtn] = useState(false)
+
+  // ── Suggested prompts ────────────────────────────────────────────────────
+  const PROMPTS = [
+    "Help me write code",
+    "Explain a concept",
+    "Brainstorm ideas",
+    "Summarise something",
+  ]
 
   // ── Load messages ────────────────────────────────────────────────────────
   const loadMessages = useCallback(async (chatId) => {
@@ -189,6 +205,18 @@ export default function Chat() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, waiting])
 
+  // ── Track scroll position for scroll-to-bottom button ───────────────────
+  useEffect(() => {
+    const el = messagesAreaRef.current
+    if (!el) return
+    function handleScroll() {
+      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+      setShowScrollBtn(distFromBottom > 200)
+    }
+    el.addEventListener("scroll", handleScroll)
+    return () => el.removeEventListener("scroll", handleScroll)
+  }, [])
+
   // ── Auto-resize textarea ─────────────────────────────────────────────────
   useEffect(() => {
     const el = textareaRef.current
@@ -224,8 +252,38 @@ export default function Chat() {
     socket.on("ai-response", ({ content }) => {
       if (stoppedRef.current) { stoppedRef.current = false; return }
       const clean = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim()
+
+      // Start streaming — add empty message then type it out
+      const msgId = Date.now().toString()
+      setStreamingId(msgId)
+      streamingContentRef.current = ""
+
+      setMessages(prev => [...prev, { id: msgId, role: "model", content: "", time: new Date().toISOString() }])
       setWaiting(false)
-      setMessages(prev => [...prev, { role: "model", content: clean, time: new Date().toISOString() }])
+
+      // Stream character by character
+      let i = 0
+      const speed = Math.max(8, Math.min(20, Math.floor(15000 / clean.length)))
+
+      function typeNext() {
+        if (stoppedRef.current) {
+          stoppedRef.current = false
+          setStreamingId(null)
+          return
+        }
+        if (i < clean.length) {
+          streamingContentRef.current += clean[i]
+          const currentText = streamingContentRef.current
+          setMessages(prev => prev.map(m =>
+            m.id === msgId ? { ...m, content: currentText } : m
+          ))
+          i++
+          setTimeout(typeNext, speed)
+        } else {
+          setStreamingId(null)
+        }
+      }
+      typeNext()
     })
 
     socket.on("chat-title-updated", ({ chatId, title }) => {
@@ -327,6 +385,18 @@ export default function Chat() {
 
   function handleKeyDown(e) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage() }
+  }
+
+  // ── Scroll to bottom button ──────────────────────────────────────────────
+  function scrollToBottom() {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  // ── Suggested prompt click ───────────────────────────────────────────────
+  function handlePrompt(prompt) {
+    if (!activeChatId || waiting || streamingId) return
+    setInput(prompt)
+    textareaRef.current?.focus()
   }
 
   // ── Stop generation ──────────────────────────────────────────────────────
@@ -489,7 +559,7 @@ export default function Chat() {
         </div>
 
         {/* ── Messages ──────────────────────────────────────────────────── */}
-        <div className="messages-area">
+        <div className="messages-area" ref={messagesAreaRef}>
           <div className="messages-col">
 
             {!activeChatId ? (
@@ -517,6 +587,17 @@ export default function Chat() {
                 </div>
                 <h3>Start the conversation</h3>
                 <p>Ask me anything — I'm here to help.</p>
+                <div className="prompt-chips">
+                  {PROMPTS.map(p => (
+                    <button
+                      key={p}
+                      className="prompt-chip"
+                      onClick={() => handlePrompt(p)}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
               </div>
 
             ) : (
@@ -543,6 +624,9 @@ export default function Chat() {
                             <ReactMarkdown components={MarkdownComponents}>
                               {msg.content}
                             </ReactMarkdown>
+                            {streamingId === msg.id && (
+                              <span className="streaming-cursor" />
+                            )}
                           </div>
                           <div className="msg-actions">
                             <button
@@ -585,6 +669,15 @@ export default function Chat() {
             )}
           </div>
         </div>
+
+        {/* Scroll to bottom button */}
+        {showScrollBtn && (
+          <button className="btn-scroll-bottom" onClick={scrollToBottom} title="Scroll to bottom">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+        )}
 
         {/* ── Input ─────────────────────────────────────────────────────── */}
         <div className="input-area">
