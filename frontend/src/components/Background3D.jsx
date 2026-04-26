@@ -160,13 +160,13 @@ const gridFragmentShader = `
   }
 `
 
-function InteractiveGrid() {
+function InteractiveGrid({ isMobile = false }) {
   const { camera } = useThree()
-  const materialRef   = useRef(null)
+  const materialRef    = useRef(null)
   const targetMousePos = useRef(new THREE.Vector3(0, 0, 0))
-  const activeRef     = useRef(0)
-  const isMovingRef   = useRef(false)
-  const pointerRef    = useRef(new THREE.Vector2(0, 0))
+  const activeRef      = useRef(0)
+  const isMovingRef    = useRef(false)
+  const pointerRef     = useRef(new THREE.Vector2(0, 0))
 
   useEffect(() => {
     let timeout
@@ -190,8 +190,8 @@ function InteractiveGrid() {
     }
   }, [])
 
-  const countX  = 100
-  const countY  = 60
+  const countX  = isMobile ? 55 : 100
+  const countY  = isMobile ? 32 : 60
   const spacing = 0.45
 
   const positions = useMemo(() => {
@@ -261,6 +261,8 @@ function InteractiveGrid() {
 
 // ── Main export ───────────────────────────────────────────────────────────
 export default function Background3D({ variant = "chat" }) {
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768
+
   return (
     <div style={{
       position: "fixed",
@@ -277,16 +279,15 @@ export default function Background3D({ variant = "chat" }) {
       >
         <Canvas
           camera={{ position: [0, 0, 5], fov: 60 }}
-          dpr={[1, 1.5]}
+          dpr={isMobile ? [1, 1] : [1, 1.5]}
           style={{ position: "absolute", inset: 0 }}
         >
-          {/* Aurora only on auth pages — too distracting in chat */}
           {variant === "auth" && <AuroraShader />}
-          <InteractiveGrid />
+          <InteractiveGrid isMobile={isMobile} />
         </Canvas>
       </WebGLErrorBoundary>
 
-      {/* Vignette — keeps edges dark so UI elements stay readable */}
+      {/* Vignette */}
       <div style={{
         position: "absolute",
         inset: 0,

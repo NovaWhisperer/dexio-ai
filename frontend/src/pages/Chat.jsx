@@ -367,7 +367,6 @@ export default function Chat() {
               <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <Plus size={14} /> New chat
               </span>
-              <span className="btn-new-chat-shortcut">⌘ N</span>
             </button>
             <button className="btn-icon sidebar-close-btn" onClick={() => setSidebarOpen(false)}>
               <X size={16} />
