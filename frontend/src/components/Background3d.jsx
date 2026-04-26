@@ -261,7 +261,7 @@ function InteractiveGrid() {
   )
 }
 
-// ── Main export ───────────────────────────────────────────────────────────
+// ── Main export ──────────────────────────────────────────────────────────
 export default function Background3D({ variant = "chat" }) {
   return (
     <div style={{
