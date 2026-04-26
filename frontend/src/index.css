@@ -766,7 +766,8 @@ input, textarea { font-family: var(--font-body); }
 }
 
 @media (max-width: 480px) {
-  .msg-bubble-ai, .msg-bubble-user { font-size: 14px; }
+  .msg-bubble-ai  { font-size: 14px; }
+  .msg-bubble-user { font-size: 14px; }
 }
 
 /* Timestamp */
@@ -786,8 +787,6 @@ input, textarea { font-family: var(--font-body); }
   font-size: 15px;
   line-height: 1.8;
   word-break: break-word;
-  padding-left: 12px;
-  border-left: 2px solid rgba(16,185,129,0.3);
 }
 
 .msg-bubble-ai p            { margin-bottom: 12px; }
@@ -839,13 +838,12 @@ input, textarea { font-family: var(--font-body); }
   font-size: 13px;
 }
 
-/* Code block wrapper — breaks out of msg-bubble-ai indent */
+/* Code block wrapper */
 .code-block-wrap {
   position: relative;
-  margin: 14px -12px;  /* negative margin cancels parent padding-left */
+  margin: 14px 0;
   border-radius: 10px;
   overflow: hidden;
-  border: 1px solid #27272a;
   background: #0d0d10;
 }
 
