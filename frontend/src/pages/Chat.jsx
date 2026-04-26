@@ -28,7 +28,7 @@ function loadStyle() {
           ...mod.oneDark,
           'pre[class*="language-"]': {
             ...mod.oneDark['pre[class*="language-"]'],
-            background: "#0a0a0c",
+            background: "#000000",
             border: "none",
             boxShadow: "none",
             margin: 0,

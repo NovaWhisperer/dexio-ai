@@ -844,7 +844,7 @@ input, textarea { font-family: var(--font-body); }
   margin: 14px 0;
   border-radius: 12px;
   overflow: hidden;
-  background: #0a0a0c;
+  background: #000000;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -890,7 +890,7 @@ input, textarea { font-family: var(--font-body); }
 
 /* Fallback pre when style not loaded yet */
 .code-fallback {
-  background: #0a0a0c;
+  background: #000000;
   padding: 18px 20px;
   border-radius: 12px;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
@@ -927,7 +927,7 @@ input, textarea { font-family: var(--font-body); }
   border: none !important;
   border-radius: 12px !important;
   box-shadow: none !important;
-  background: #0a0a0c !important;
+  background: #000000 !important;
 }
 
 .msg-bubble-ai ol,
