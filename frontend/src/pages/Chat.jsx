@@ -103,17 +103,20 @@ function CodeBlock({ language, children }) {
           <SyntaxHighlighter
             style={style}
             language={language || "text"}
-            PreTag="div"
             useInlineStyles={true}
             wrapLines={false}
             customStyle={{
               margin: 0,
-              padding: 0,
-              background: "transparent",
+              padding: "18px 20px",
+              background: "#000000",
               border: "none",
               boxShadow: "none",
               borderRadius: "12px",
-              overflow: "hidden",
+              fontSize: "13px",
+              lineHeight: "1.75",
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
+              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
             }}
             codeTagProps={{
               style: {
