@@ -8,6 +8,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism"
 import toast, { Toaster } from "react-hot-toast"
 import DexioLogo from "../components/DexioLogo"
+import Background3D from "../components/Background3D"
 import { User, Menu, X, Plus, Send, Square, Copy, Trash2, LogOut, MessageSquare } from "lucide-react"
 
 // ── Code block with copy button ───────────────────────────────────────────
@@ -316,6 +317,7 @@ export default function Chat() {
 
   return (
     <div className="chat-shell">
+      <Background3D variant="chat" />
       <Toaster
         position="top-right"
         toastOptions={{

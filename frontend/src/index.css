@@ -55,30 +55,77 @@ input, textarea { font-family: var(--font-body); }
   border: 1px solid rgba(255,255,255,0.06);
 }
 
+/* ── Glass utilities ────────────────────────────────────────────────────── */
+.glass {
+  background: rgba(10,10,15,0.45);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 32px 64px -16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.glass-emerald {
+  background: rgba(16,185,129,0.06);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(16,185,129,0.15);
+  box-shadow: 0 8px 32px rgba(16,185,129,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.glass-surface {
+  background: rgba(9,9,11,0.6);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+::selection {
+  background-color: rgba(16,185,129,0.3);
+  color: #fff;
+}
+
 /* ── Auth ───────────────────────────────────────────────────────────────── */
 .auth-shell {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg);
-  background-image:
-    radial-gradient(ellipse 55% 45% at 10% 0%, rgba(16,185,129,0.12) 0%, transparent 65%),
-    radial-gradient(ellipse 40% 35% at 90% 100%, rgba(63,63,70,0.08) 0%, transparent 60%);
+  background: transparent;
   padding: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-card-wrap {
+  width: 100%;
+  max-width: 440px;
+  border-radius: 28px;
+  padding: 48px 44px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+  animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both;
+  position: relative;
+  z-index: 10;
+}
+
+/* Top shine line on auth card */
+.auth-card-wrap::before {
+  content: '';
+  position: absolute;
+  inset-x: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  border-radius: 28px 28px 0 0;
+  pointer-events: none;
 }
 
 .auth-card {
   width: 100%;
   max-width: 440px;
-  background: rgba(24,24,27,0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.07);
   border-radius: 28px;
   padding: 48px 44px;
-  box-shadow: 0 32px 80px rgba(0,0,0,0.5);
-  animation: fadeUp 0.4s ease both;
+  animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both;
 }
 
 @media (max-width: 480px) {
@@ -213,37 +260,11 @@ input, textarea { font-family: var(--font-body); }
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background: var(--bg);
+  background: transparent;
   position: relative;
 }
 
-/* Atmosphere blobs */
-.chat-shell::before,
-.chat-shell::after {
-  content: '';
-  position: fixed;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.chat-shell::before {
-  width: 45%;
-  height: 45%;
-  top: -10%;
-  left: -10%;
-  background: radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%);
-  filter: blur(60px);
-}
-
-.chat-shell::after {
-  width: 40%;
-  height: 40%;
-  bottom: -10%;
-  right: -10%;
-  background: radial-gradient(circle, rgba(63,63,70,0.06) 0%, transparent 70%);
-  filter: blur(60px);
-}
+/* Atmosphere handled by Background3D canvas */
 
 /* ── Sidebar overlay ────────────────────────────────────────────────────── */
 .sidebar-overlay {
@@ -259,9 +280,9 @@ input, textarea { font-family: var(--font-body); }
 .sidebar {
   width: var(--sidebar-w);
   flex-shrink: 0;
-  background: rgba(9,9,11,0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(9,9,11,0.7);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-right: 1px solid rgba(255,255,255,0.05);
   display: flex;
   flex-direction: column;

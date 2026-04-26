@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { api } from "../services/api"
 import { useAuth } from "../context/useAuth"
 import DexioLogo from "../components/DexioLogo"
+import Background3D from "../components/Background3D"
 import toast, { Toaster } from "react-hot-toast"
 
 export default function Register() {
@@ -38,6 +39,7 @@ export default function Register() {
 
   return (
     <div className="auth-shell">
+      <Background3D variant="auth" />
       <Toaster
         position="top-center"
         toastOptions={{
@@ -52,7 +54,7 @@ export default function Register() {
         }}
       />
 
-      <div className="auth-card">
+      <div className="auth-card glass auth-card-wrap">
         <div className="auth-logo">
           <DexioLogo size="md" />
         </div>
