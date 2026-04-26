@@ -84,7 +84,7 @@ const auroraFragmentShader = `
   }
 `
 
-function AuroraShader() {
+function AuroraShader({ opacity = 1 }) {
   const materialRef = useRef(null)
   const { size } = useThree()
 
@@ -100,7 +100,7 @@ function AuroraShader() {
   })
 
   return (
-    <mesh renderOrder={-1}>
+    <mesh renderOrder={-1} scale={[1, 1, 1]}>
       <planeGeometry args={[2, 2]} />
       <shaderMaterial
         ref={materialRef}
@@ -109,6 +109,8 @@ function AuroraShader() {
         uniforms={uniforms}
         depthWrite={false}
         depthTest={false}
+        transparent={opacity < 1}
+        opacity={opacity}
       />
     </mesh>
   )
@@ -282,17 +284,23 @@ export default function Background3D({ variant = "chat" }) {
           dpr={isMobile ? [1, 1] : [1, 1.5]}
           style={{ position: "absolute", inset: 0 }}
         >
-          {variant === "auth" && <AuroraShader />}
+          {/* Auth — full aurora. Chat — very subtle aurora (opacity wrapper) */}
+          {variant === "auth"
+            ? <AuroraShader />
+            : <AuroraShader opacity={0.25} />
+          }
           <InteractiveGrid isMobile={isMobile} />
         </Canvas>
       </WebGLErrorBoundary>
 
-      {/* Vignette */}
+      {/* Vignette — stronger on chat to keep text readable */}
       <div style={{
         position: "absolute",
         inset: 0,
         zIndex: 2,
-        background: "radial-gradient(circle at center, transparent 35%, rgba(0,0,0,0.92) 100%)",
+        background: variant === "chat"
+          ? "radial-gradient(circle at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.95) 100%)"
+          : "radial-gradient(circle at center, transparent 35%, rgba(0,0,0,0.92) 100%)",
         pointerEvents: "none",
       }} />
     </div>

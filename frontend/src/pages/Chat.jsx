@@ -14,16 +14,28 @@ const SyntaxHighlighter = lazy(() =>
   import("react-syntax-highlighter").then(mod => ({ default: mod.Prism }))
 )
 
+// ── Load syntax style once at module level — shared across all CodeBlocks ─
+let cachedStyle = null
+let stylePromise = null
+
+function loadStyle() {
+  if (cachedStyle) return Promise.resolve(cachedStyle)
+  if (!stylePromise) {
+    stylePromise = import("react-syntax-highlighter/dist/esm/styles/prism")
+      .then(mod => { cachedStyle = mod.oneDark; return cachedStyle })
+  }
+  return stylePromise
+}
+
 // ── Code block with hover copy button ────────────────────────────────────
 function CodeBlock({ language, children }) {
   const [copied, setCopied] = useState(false)
-  const [style, setStyle]   = useState(null)
-  const [hovered, setHovered] = useState(false)
+  const [style, setStyle]   = useState(cachedStyle)
 
   useEffect(() => {
-    import("react-syntax-highlighter/dist/esm/styles/prism").then(mod => {
-      setStyle(mod.oneDark)
-    })
+    if (!cachedStyle) {
+      loadStyle().then(s => setStyle(s))
+    }
   }, [])
 
   async function handleCopy() {
@@ -37,16 +49,11 @@ function CodeBlock({ language, children }) {
   }
 
   return (
-    <div
-      className="code-block-wrap"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {/* Hover-only copy button — floats top-right */}
+    <div className="code-block-wrap">
+      {/* Copy button — shown via CSS :hover on parent */}
       <button
-        className="btn-copy-code"
+        className={`btn-copy-code${copied ? " copied" : ""}`}
         onClick={handleCopy}
-        style={{ opacity: hovered || copied ? 1 : 0 }}
       >
         {copied ? (
           <>
@@ -64,9 +71,7 @@ function CodeBlock({ language, children }) {
       </button>
 
       <Suspense fallback={
-        <pre style={{ background: "#0d0d10", padding: "18px 20px", borderRadius: "10px", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "#a1a1aa", margin: 0, overflowX: "auto" }}>
-          {children}
-        </pre>
+        <pre className="code-fallback">{children}</pre>
       }>
         {style ? (
           <SyntaxHighlighter
@@ -77,27 +82,26 @@ function CodeBlock({ language, children }) {
             wrapLines={false}
             customStyle={{
               borderRadius: "10px",
-              fontSize: "13.5px",
+              fontSize: "13px",
               margin: 0,
               border: "none",
               background: "#0d0d10",
               padding: "18px 20px",
-              lineHeight: "1.7",
+              lineHeight: "1.75",
               overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
             }}
             codeTagProps={{
               style: {
                 fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                fontSize: "13.5px",
+                fontSize: "13px",
               }
             }}
           >
             {children}
           </SyntaxHighlighter>
         ) : (
-          <pre style={{ background: "#0d0d10", padding: "18px 20px", borderRadius: "10px", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "#a1a1aa", margin: 0, overflowX: "auto" }}>
-            {children}
-          </pre>
+          <pre className="code-fallback">{children}</pre>
         )}
       </Suspense>
     </div>

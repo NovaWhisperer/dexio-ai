@@ -845,64 +845,87 @@ input, textarea { font-family: var(--font-body); }
   border-radius: 10px;
   overflow: hidden;
   background: #0d0d10;
+  /* Isolate overflow for mobile horizontal scroll */
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Header bar with language + copy */
-.code-block-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #111113;
-  border-bottom: 1px solid #1f1f23;
-  padding: 7px 14px;
-}
-
-.code-block-lang-wrap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.code-block-lang {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: #52525b;
-  text-transform: lowercase;
-  letter-spacing: 0.03em;
-}
-
+/* Copy button — absolutely positioned top-right, hidden by default */
 .btn-copy-code {
-  background: transparent;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  background: rgba(39,39,42,0.85);
+  backdrop-filter: blur(4px);
   border: 1px solid #3f3f46;
-  color: #52525b;
-  border-radius: 5px;
-  padding: 2px 9px;
+  color: #71717a;
+  border-radius: 6px;
+  padding: 4px 10px;
   font-size: 11px;
   font-family: var(--font-mono);
   display: flex;
   align-items: center;
   gap: 5px;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
   cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
 }
 
+/* Show on parent hover */
+.code-block-wrap:hover .btn-copy-code { opacity: 1; }
+
+/* Always show when copied */
+.btn-copy-code.copied { opacity: 1; color: #10b981; border-color: rgba(16,185,129,0.4); }
+
 .btn-copy-code:hover {
-  background: rgba(16,185,129,0.08);
+  background: rgba(16,185,129,0.12);
   color: #10b981;
   border-color: rgba(16,185,129,0.3);
 }
 
-/* Kill the white/light line highlight SyntaxHighlighter injects */
+/* Mobile — always show copy button since no hover */
+@media (max-width: 768px) {
+  .btn-copy-code { opacity: 1; }
+}
+
+/* Fallback pre when style not loaded yet */
+.code-fallback {
+  background: #0d0d10;
+  padding: 18px 20px;
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  color: #a1a1aa;
+  margin: 0;
+  overflow-x: auto;
+  line-height: 1.75;
+  white-space: pre;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile code block fixes */
+@media (max-width: 768px) {
+  .code-block-wrap {
+    margin: 12px 0;
+    border-radius: 8px;
+  }
+
+  .code-fallback {
+    font-size: 12px;
+    padding: 14px 16px;
+  }
+}
+
+/* Strip SyntaxHighlighter injected styles */
 .code-block-wrap span[style*="background-color: rgb(40"] { background-color: transparent !important; }
-.code-block-wrap span[style*="background-color: rgba"] { background-color: transparent !important; }
+.code-block-wrap span[style*="background-color: rgba"]   { background-color: transparent !important; }
 .code-block-wrap .token.inserted,
 .code-block-wrap .token.deleted { background: transparent !important; }
-
-/* Make sure the pre/div from SyntaxHighlighter has no extra chrome */
 .code-block-wrap > div > div {
   margin: 0 !important;
   border: none !important;
-  border-radius: 0 !important;
+  border-radius: 10px !important;
   box-shadow: none !important;
 }
 
@@ -976,13 +999,12 @@ input, textarea { font-family: var(--font-body); }
   gap: 4px;
   opacity: 0;
   transition: opacity 0.2s;
-  margin-top: 6px;
-  padding-left: 14px;
+  margin-top: 12px;
+  padding-top: 4px;
 }
 
 .msg-row.model:hover .msg-actions { opacity: 1; }
 
-/* Always visible on mobile — no hover available */
 @media (max-width: 768px) {
   .msg-actions { opacity: 1; }
 }
