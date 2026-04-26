@@ -22,7 +22,33 @@ function loadStyle() {
   if (cachedStyle) return Promise.resolve(cachedStyle)
   if (!stylePromise) {
     stylePromise = import("react-syntax-highlighter/dist/esm/styles/prism")
-      .then(mod => { cachedStyle = mod.oneDark; return cachedStyle })
+      .then(mod => {
+        // Override the style object at source — kills any injected border/bg
+        cachedStyle = {
+          ...mod.oneDark,
+          'pre[class*="language-"]': {
+            ...mod.oneDark['pre[class*="language-"]'],
+            background: "#0a0a0c",
+            border: "none",
+            boxShadow: "none",
+            margin: 0,
+            borderRadius: "12px",
+            padding: "18px 20px",
+            overflowX: "auto",
+            lineHeight: "1.75",
+            fontSize: "13px",
+            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+          },
+          'code[class*="language-"]': {
+            ...mod.oneDark['code[class*="language-"]'],
+            background: "none",
+            border: "none",
+            fontSize: "13px",
+            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+          },
+        }
+        return cachedStyle
+      })
   }
   return stylePromise
 }
@@ -81,15 +107,13 @@ function CodeBlock({ language, children }) {
             useInlineStyles={true}
             wrapLines={false}
             customStyle={{
-              borderRadius: "12px",
-              fontSize: "13px",
               margin: 0,
+              padding: 0,
+              background: "transparent",
               border: "none",
-              background: "#0a0a0c",
-              padding: "18px 20px",
-              lineHeight: "1.75",
-              overflowX: "auto",
-              WebkitOverflowScrolling: "touch",
+              boxShadow: "none",
+              borderRadius: "12px",
+              overflow: "hidden",
             }}
             codeTagProps={{
               style: {
