@@ -4,9 +4,14 @@ import { useAuth } from "../context/useAuth"
 import { api } from "../services/api"
 import { connectSocket, disconnectSocket } from "../services/socket"
 import ReactMarkdown from "react-markdown"
-import toast, { Toaster } from "react-hot-toast"
+import toast from "react-hot-toast"
+import { CustomToaster } from "../components/Toast"
 import DexioLogo from "../components/DexioLogo"
-import { User, Menu, X, Plus, Send, Square, Copy, Trash2, LogOut, MessageSquare } from "lucide-react"
+import {
+  User, Menu, X, Plus, Send, Square, Copy,
+  Trash2, LogOut, MessageSquare, Search, Type,
+  ChevronLeft
+} from "lucide-react"
 
 // ── Lazy loaded heavy components ──────────────────────────────────────────
 const Background3D = lazy(() => import("../components/Background3D"))
@@ -14,7 +19,7 @@ const SyntaxHighlighter = lazy(() =>
   import("react-syntax-highlighter").then(mod => ({ default: mod.Prism }))
 )
 
-// ── Load syntax style once at module level — shared across all CodeBlocks ─
+// ── Load syntax style once at module level ────────────────────────────────
 let cachedStyle = null
 let stylePromise = null
 
@@ -23,7 +28,6 @@ function loadStyle() {
   if (!stylePromise) {
     stylePromise = import("react-syntax-highlighter/dist/esm/styles/prism")
       .then(mod => {
-        // Override the style object at source — kills any injected border/bg
         cachedStyle = {
           ...mod.oneDark,
           'pre[class*="language-"]': {
@@ -53,15 +57,13 @@ function loadStyle() {
   return stylePromise
 }
 
-// ── Code block with hover copy button ────────────────────────────────────
+// ── Code block with hover copy + language badge ───────────────────────────
 function CodeBlock({ language, children }) {
   const [copied, setCopied] = useState(false)
   const [style, setStyle]   = useState(cachedStyle)
 
   useEffect(() => {
-    if (!cachedStyle) {
-      loadStyle().then(s => setStyle(s))
-    }
+    if (!cachedStyle) loadStyle().then(s => setStyle(s))
   }, [])
 
   async function handleCopy() {
@@ -74,9 +76,16 @@ function CodeBlock({ language, children }) {
     }
   }
 
+  const displayLang = language
+    ? language.charAt(0).toUpperCase() + language.slice(1)
+    : "Code"
+
   return (
     <div className="code-block-wrap">
-      {/* Copy button — shown via CSS :hover on parent */}
+      {/* Language badge — bottom left */}
+      <span className="code-lang-badge">{displayLang}</span>
+
+      {/* Copy button — top right, hover only */}
       <button
         className={`btn-copy-code${copied ? " copied" : ""}`}
         onClick={handleCopy}
@@ -89,16 +98,11 @@ function CodeBlock({ language, children }) {
             Copied!
           </>
         ) : (
-          <>
-            <Copy size={11} />
-            Copy
-          </>
+          <><Copy size={11} /> Copy</>
         )}
       </button>
 
-      <Suspense fallback={
-        <pre className="code-fallback">{children}</pre>
-      }>
+      <Suspense fallback={<pre className="code-fallback">{children}</pre>}>
         {style ? (
           <SyntaxHighlighter
             style={style}
@@ -107,7 +111,7 @@ function CodeBlock({ language, children }) {
             wrapLines={false}
             customStyle={{
               margin: 0,
-              padding: "18px 20px",
+              padding: "18px 20px 32px",
               background: "#111115",
               border: "none",
               boxShadow: "none",
@@ -119,10 +123,7 @@ function CodeBlock({ language, children }) {
               fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
             }}
             codeTagProps={{
-              style: {
-                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                fontSize: "13px",
-              }
+              style: { fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: "13px" }
             }}
           >
             {children}
@@ -151,6 +152,18 @@ function formatTime(date) {
   return new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 }
 
+// ── Font size options ─────────────────────────────────────────────────────
+const FONT_SIZES = ["sm", "md", "lg"]
+const FONT_SIZE_MAP = { sm: "13px", md: "15px", lg: "17px" }
+
+// ── Suggested prompts ─────────────────────────────────────────────────────
+const PROMPTS = [
+  "Help me write code",
+  "Explain a concept",
+  "Brainstorm ideas",
+  "Summarise something",
+]
+
 export default function Chat() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -166,30 +179,28 @@ export default function Chat() {
   const [loadingMsgs, setLoadingMsgs]   = useState(false)
   const [deletingId, setDeletingId]     = useState(null)
   const [sidebarOpen, setSidebarOpen]   = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [renamingId, setRenamingId]     = useState(null)
   const [renameValue, setRenameValue]   = useState("")
-
-  const socketRef   = useRef(null)
-  const bottomRef   = useRef(null)
-  const textareaRef = useRef(null)
-  const renameRef   = useRef(null)
-  const stoppedRef  = useRef(false)
-  const messagesAreaRef = useRef(null)
-
-  // ── Streaming state ──────────────────────────────────────────────────────
-  const [streamingId, setStreamingId]     = useState(null)
-  const streamingContentRef               = useRef("")
-
-  // ── Scroll to bottom button ──────────────────────────────────────────────
+  const [streamingId, setStreamingId]   = useState(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
+  const [searchQuery, setSearchQuery]   = useState("")
+  const [showSearch, setShowSearch]     = useState(false)
+  const [fontSize, setFontSize]         = useState("md")
 
-  // ── Suggested prompts ────────────────────────────────────────────────────
-  const PROMPTS = [
-    "Help me write code",
-    "Explain a concept",
-    "Brainstorm ideas",
-    "Summarise something",
-  ]
+  const streamingContentRef = useRef("")
+  const socketRef           = useRef(null)
+  const bottomRef           = useRef(null)
+  const textareaRef         = useRef(null)
+  const renameRef           = useRef(null)
+  const stoppedRef          = useRef(false)
+  const messagesAreaRef     = useRef(null)
+  const searchRef           = useRef(null)
+
+  // ── Apply font size to root ───────────────────────────────────────────────
+  useEffect(() => {
+    document.documentElement.style.setProperty("--chat-font-size", FONT_SIZE_MAP[fontSize])
+  }, [fontSize])
 
   // ── Load messages ────────────────────────────────────────────────────────
   const loadMessages = useCallback(async (chatId) => {
@@ -198,6 +209,7 @@ export default function Chat() {
     try {
       const data = await api.getChatMessages(chatId)
       setMessages(data.messages.map(m => ({
+        id: m._id,
         role: m.role,
         content: m.content,
         time: m.createdAt || new Date().toISOString(),
@@ -228,18 +240,24 @@ export default function Chat() {
     loadChats()
   }, [loadMessages])
 
+  // ── Auto-focus textarea when chat selected ───────────────────────────────
+  useEffect(() => {
+    if (activeChatId && !loadingMsgs) {
+      setTimeout(() => textareaRef.current?.focus(), 100)
+    }
+  }, [activeChatId, loadingMsgs])
+
   // ── Scroll to bottom ─────────────────────────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, waiting])
 
-  // ── Track scroll position for scroll-to-bottom button ───────────────────
+  // ── Track scroll for scroll-to-bottom button ─────────────────────────────
   useEffect(() => {
     const el = messagesAreaRef.current
     if (!el) return
     function handleScroll() {
-      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
-      setShowScrollBtn(distFromBottom > 200)
+      setShowScrollBtn(el.scrollHeight - el.scrollTop - el.clientHeight > 200)
     }
     el.addEventListener("scroll", handleScroll)
     return () => el.removeEventListener("scroll", handleScroll)
@@ -258,6 +276,11 @@ export default function Chat() {
     if (renamingId) renameRef.current?.focus()
   }, [renamingId])
 
+  // ── Focus search input ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (showSearch) searchRef.current?.focus()
+  }, [showSearch])
+
   // ── Close sidebar on outside click ──────────────────────────────────────
   useEffect(() => {
     function handleOutside(e) {
@@ -268,6 +291,45 @@ export default function Chat() {
     document.addEventListener("mousedown", handleOutside)
     return () => document.removeEventListener("mousedown", handleOutside)
   }, [sidebarOpen])
+
+  // ── Keyboard shortcuts ───────────────────────────────────────────────────
+  useEffect(() => {
+    function handleKeys(e) {
+      const mod = e.metaKey || e.ctrlKey
+
+      // Cmd/Ctrl + K → focus input
+      if (mod && e.key === "k") {
+        e.preventDefault()
+        textareaRef.current?.focus()
+      }
+
+      // Cmd/Ctrl + N → new chat
+      if (mod && e.key === "n") {
+        e.preventDefault()
+        handleNewChat()
+      }
+
+      // Cmd/Ctrl + F → toggle message search
+      if (mod && e.key === "f" && activeChatId) {
+        e.preventDefault()
+        setShowSearch(prev => !prev)
+      }
+
+      // Escape → close search or sidebar
+      if (e.key === "Escape") {
+        if (showSearch) { setShowSearch(false); setSearchQuery("") }
+        if (sidebarOpen) setSidebarOpen(false)
+      }
+
+      // [ → toggle sidebar collapse (desktop)
+      if (mod && e.key === "[") {
+        e.preventDefault()
+        setSidebarCollapsed(prev => !prev)
+      }
+    }
+    document.addEventListener("keydown", handleKeys)
+    return () => document.removeEventListener("keydown", handleKeys)
+  }, [activeChatId, showSearch, sidebarOpen])
 
   // ── Socket setup ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -281,30 +343,21 @@ export default function Chat() {
       if (stoppedRef.current) { stoppedRef.current = false; return }
       const clean = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim()
 
-      // Start streaming — add empty message then type it out
       const msgId = Date.now().toString()
       setStreamingId(msgId)
       streamingContentRef.current = ""
-
       setMessages(prev => [...prev, { id: msgId, role: "model", content: "", time: new Date().toISOString() }])
       setWaiting(false)
 
-      // Stream character by character
       let i = 0
       const speed = Math.max(8, Math.min(20, Math.floor(15000 / clean.length)))
 
       function typeNext() {
-        if (stoppedRef.current) {
-          stoppedRef.current = false
-          setStreamingId(null)
-          return
-        }
+        if (stoppedRef.current) { stoppedRef.current = false; setStreamingId(null); return }
         if (i < clean.length) {
           streamingContentRef.current += clean[i]
           const currentText = streamingContentRef.current
-          setMessages(prev => prev.map(m =>
-            m.id === msgId ? { ...m, content: currentText } : m
-          ))
+          setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: currentText } : m))
           i++
           setTimeout(typeNext, speed)
         } else {
@@ -348,6 +401,8 @@ export default function Chat() {
     setWaiting(false)
     stoppedRef.current = false
     setSidebarOpen(false)
+    setShowSearch(false)
+    setSearchQuery("")
     loadMessages(chatId)
   }
 
@@ -402,12 +457,10 @@ export default function Chat() {
   const sendMessage = useCallback(() => {
     const content = input.trim()
     if (!content || !activeChatId || waiting) return
-
     stoppedRef.current = false
-    setMessages(prev => [...prev, { role: "user", content, time: new Date().toISOString() }])
+    setMessages(prev => [...prev, { id: Date.now().toString(), role: "user", content, time: new Date().toISOString() }])
     setInput("")
     setWaiting(true)
-
     socketRef.current.emit("ai-message", { chat: activeChatId, content })
   }, [input, activeChatId, waiting])
 
@@ -415,25 +468,21 @@ export default function Chat() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
 
-  // ── Scroll to bottom button ──────────────────────────────────────────────
   function scrollToBottom() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  // ── Suggested prompt click ───────────────────────────────────────────────
   function handlePrompt(prompt) {
     if (!activeChatId || waiting || streamingId) return
     setInput(prompt)
     textareaRef.current?.focus()
   }
 
-  // ── Stop generation ──────────────────────────────────────────────────────
   function handleStop() {
     stoppedRef.current = true
     setWaiting(false)
   }
 
-  // ── Copy message ─────────────────────────────────────────────────────────
   async function handleCopyMessage(content) {
     try {
       await navigator.clipboard.writeText(content)
@@ -443,12 +492,23 @@ export default function Chat() {
     }
   }
 
-  // ── Logout ───────────────────────────────────────────────────────────────
+  function cycleFontSize() {
+    setFontSize(prev => {
+      const idx = FONT_SIZES.indexOf(prev)
+      return FONT_SIZES[(idx + 1) % FONT_SIZES.length]
+    })
+  }
+
   async function handleLogout() {
     disconnectSocket()
     await logout()
     navigate("/login")
   }
+
+  // ── Filtered messages for search ─────────────────────────────────────────
+  const filteredMessages = searchQuery.trim()
+    ? messages.filter(m => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
+    : messages
 
   const activeChat = chats.find(c => c._id === activeChatId)
   const initials   = user
@@ -460,39 +520,38 @@ export default function Chat() {
       <Suspense fallback={null}>
         <Background3D variant="chat" />
       </Suspense>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: "#18181b",
-            color: "#f4f4f5",
-            border: "1px solid #27272a",
-            fontSize: "13px",
-            borderRadius: "10px",
-          },
-          success: { iconTheme: { primary: "#10b981", secondary: "#18181b" } },
-          error:   { iconTheme: { primary: "#f87171", secondary: "#18181b" } },
-        }}
-      />
 
-      {/* Mobile overlay — full screen tap to close */}
+      <CustomToaster />
+
+      {/* Mobile overlay */}
       {sidebarOpen && (
-        <div
-          className="sidebar-overlay"
-          onClick={() => setSidebarOpen(false)}
-          aria-label="Close sidebar"
-        />
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-label="Close sidebar" />
       )}
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className={`sidebar${sidebarOpen ? " open" : ""}`}>
+      <aside className={`sidebar${sidebarOpen ? " open" : ""}${sidebarCollapsed ? " collapsed" : ""}`}>
         <div className="sidebar-head">
-          <DexioLogo size="sm" />
+          {!sidebarCollapsed && <DexioLogo size="sm" />}
           <div className="sidebar-head-actions">
-            <button className="btn-new-chat" onClick={handleNewChat}>
-              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <Plus size={14} /> New chat
-              </span>
+            {!sidebarCollapsed && (
+              <button className="btn-new-chat" onClick={handleNewChat}>
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <Plus size={14} /> New chat
+                </span>
+              </button>
+            )}
+            {sidebarCollapsed && (
+              <button className="btn-icon" onClick={handleNewChat} title="New chat">
+                <Plus size={16} />
+              </button>
+            )}
+            {/* Collapse toggle — desktop only */}
+            <button
+              className="btn-icon collapse-btn"
+              onClick={() => setSidebarCollapsed(prev => !prev)}
+              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              <ChevronLeft size={16} style={{ transform: sidebarCollapsed ? "rotate(180deg)" : "none", transition: "transform 0.25s" }} />
             </button>
             <button className="btn-icon sidebar-close-btn" onClick={() => setSidebarOpen(false)}>
               <X size={16} />
@@ -500,72 +559,75 @@ export default function Chat() {
           </div>
         </div>
 
-        <div className="chat-list">
-          {loadingChats ? (
-            <div className="chat-list-loading">
-              <span className="skeleton" />
-              <span className="skeleton" />
-              <span className="skeleton" />
-            </div>
-          ) : (
-            <>
-              {chats.length > 0 && (
-                <div className="chat-list-label">Recent History</div>
-              )}
-              {chats.map(chat => (
-                <div
-                  key={chat._id}
-                  className={`chat-item${chat._id === activeChatId ? " active" : ""}`}
-                  onClick={() => selectChat(chat._id)}
-                  onDoubleClick={(e) => handleDoubleClick(e, chat)}
-                  title="Double-click to rename"
-                >
-                  {renamingId === chat._id ? (
-                    <input
-                      ref={renameRef}
-                      className="rename-input"
-                      value={renameValue}
-                      onChange={e => setRenameValue(e.target.value)}
-                      onKeyDown={e => handleRenameKeyDown(e, chat._id)}
-                      onBlur={() => handleRenameSubmit(chat._id)}
-                      onClick={e => e.stopPropagation()}
-                    />
-                  ) : (
-                    <>
-                      <MessageSquare size={13} className="chat-item-icon" />
-                      <span className="chat-item-title">{chat.title}</span>
-                      <button
-                        className="btn-delete-chat"
-                        onClick={(e) => handleDeleteChat(e, chat._id)}
-                        disabled={deletingId === chat._id}
-                        title="Delete"
-                      >
-                        {deletingId === chat._id ? "…" : <Trash2 size={13} />}
-                      </button>
-                    </>
-                  )}
-                </div>
-              ))}
-              {chats.length === 0 && (
-                <p className="chat-list-empty">No chats yet — start one!</p>
-              )}
-            </>
-          )}
-        </div>
+        {!sidebarCollapsed && (
+          <div className="chat-list">
+            {loadingChats ? (
+              <div className="chat-list-loading">
+                <span className="skeleton" /><span className="skeleton" /><span className="skeleton" />
+              </div>
+            ) : (
+              <>
+                {chats.length > 0 && <div className="chat-list-label">Recent History</div>}
+                {chats.map(chat => (
+                  <div
+                    key={chat._id}
+                    className={`chat-item${chat._id === activeChatId ? " active" : ""}`}
+                    onClick={() => selectChat(chat._id)}
+                    onDoubleClick={(e) => handleDoubleClick(e, chat)}
+                    title="Double-click to rename"
+                  >
+                    {renamingId === chat._id ? (
+                      <input
+                        ref={renameRef}
+                        className="rename-input"
+                        value={renameValue}
+                        onChange={e => setRenameValue(e.target.value)}
+                        onKeyDown={e => handleRenameKeyDown(e, chat._id)}
+                        onBlur={() => handleRenameSubmit(chat._id)}
+                        onClick={e => e.stopPropagation()}
+                      />
+                    ) : (
+                      <>
+                        <MessageSquare size={13} className="chat-item-icon" />
+                        <span className="chat-item-title">{chat.title}</span>
+                        <button
+                          className="btn-delete-chat"
+                          onClick={(e) => handleDeleteChat(e, chat._id)}
+                          disabled={deletingId === chat._id}
+                          title="Delete"
+                        >
+                          {deletingId === chat._id ? "…" : <Trash2 size={13} />}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ))}
+                {chats.length === 0 && <p className="chat-list-empty">No chats yet — start one!</p>}
+              </>
+            )}
+          </div>
+        )}
 
         <div className="sidebar-foot">
-          <div className="user-pill">
-            <div className="user-avatar">{initials}</div>
-            <div className="user-info">
-              <div className="user-name">
-                {user?.fullName?.firstName} {user?.fullName?.lastName}
-              </div>
-              <div className="user-email">{user?.email}</div>
+          {sidebarCollapsed ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+              <div className="user-avatar" style={{ margin: "0 auto" }}>{initials}</div>
+              <button onClick={handleLogout} title="Logout" className="btn-icon logout-btn">
+                <LogOut size={15} />
+              </button>
             </div>
-            <button onClick={handleLogout} title="Logout" className="btn-icon logout-btn">
-              <LogOut size={15} />
-            </button>
-          </div>
+          ) : (
+            <div className="user-pill">
+              <div className="user-avatar">{initials}</div>
+              <div className="user-info">
+                <div className="user-name">{user?.fullName?.firstName} {user?.fullName?.lastName}</div>
+                <div className="user-email">{user?.email}</div>
+              </div>
+              <button onClick={handleLogout} title="Logout" className="btn-icon logout-btn">
+                <LogOut size={15} />
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -579,19 +641,57 @@ export default function Chat() {
           </button>
 
           <div className="topbar-center">
-            <div
-              className="status-dot"
-              style={{ background: connected ? "var(--accent)" : "var(--text3)" }}
-            />
+            <div className="status-dot" style={{ background: connected ? "var(--accent)" : "var(--text3)" }} />
             <span>{activeChat ? activeChat.title : "Dexio AI"}</span>
-            {!connected && (
-              <span className="reconnecting-text">— reconnecting…</span>
+            {!connected && <span className="reconnecting-text">— reconnecting…</span>}
+          </div>
+
+          {/* Topbar actions */}
+          <div className="topbar-actions">
+            {activeChatId && (
+              <button
+                className={`btn-icon${showSearch ? " active" : ""}`}
+                onClick={() => { setShowSearch(p => !p); setSearchQuery("") }}
+                title="Search messages (⌘F)"
+              >
+                <Search size={16} />
+              </button>
             )}
+            <button
+              className="btn-icon font-size-btn"
+              onClick={cycleFontSize}
+              title={`Font size: ${fontSize} (click to cycle)`}
+            >
+              <Type size={16} />
+              <span className="font-size-label">{fontSize.toUpperCase()}</span>
+            </button>
           </div>
         </div>
 
+        {/* Search bar */}
+        {showSearch && (
+          <div className="search-bar">
+            <Search size={14} style={{ color: "var(--text3)", flexShrink: 0 }} />
+            <input
+              ref={searchRef}
+              className="search-input"
+              placeholder="Search in conversation…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <span className="search-count">
+                {filteredMessages.length} result{filteredMessages.length !== 1 ? "s" : ""}
+              </span>
+            )}
+            <button className="btn-icon" onClick={() => { setShowSearch(false); setSearchQuery("") }}>
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
         {/* ── Messages ──────────────────────────────────────────────────── */}
-        <div className="messages-area" ref={messagesAreaRef}>
+        <div className="messages-area" ref={messagesAreaRef} style={{ fontSize: FONT_SIZE_MAP[fontSize] }}>
           <div className="messages-col">
 
             {!activeChatId ? (
@@ -601,6 +701,13 @@ export default function Chat() {
                 </div>
                 <h3>How can I help you today?</h3>
                 <p>Create a new chat to get started with Dexio AI.</p>
+                <div className="prompt-chips">
+                  {PROMPTS.map(p => (
+                    <button key={p} className="prompt-chip" onClick={handleNewChat}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
               </div>
 
             ) : loadingMsgs ? (
@@ -621,11 +728,7 @@ export default function Chat() {
                 <p>Ask me anything — I'm here to help.</p>
                 <div className="prompt-chips">
                   {PROMPTS.map(p => (
-                    <button
-                      key={p}
-                      className="prompt-chip"
-                      onClick={() => handlePrompt(p)}
-                    >
+                    <button key={p} className="prompt-chip" onClick={() => handlePrompt(p)}>
                       {p}
                     </button>
                   ))}
@@ -634,53 +737,46 @@ export default function Chat() {
 
             ) : (
               <>
-                {messages.map((msg, i) => (
-                  <div key={i} className={`msg-row ${msg.role}`}>
-
-                    {/* Avatar */}
-                    {msg.role === "model" ? (
-                      <div className="msg-avatar">
-                        <DexioLogo size="sm" showText={false} />
-                      </div>
-                    ) : (
-                      <div className="msg-avatar-user">
-                        <User size={15} />
-                      </div>
-                    )}
-
-                    {/* Content */}
-                    <div className="msg-content">
-                      {msg.role === "model" ? (
-                        <>
-                          <div className="msg-bubble-ai">
-                            <ReactMarkdown components={MarkdownComponents}>
-                              {msg.content}
-                            </ReactMarkdown>
-                            {streamingId === msg.id && (
-                              <span className="streaming-cursor" />
-                            )}
-                          </div>
-                          <div className="msg-actions">
-                            <button
-                              className="btn-copy"
-                              onClick={() => handleCopyMessage(msg.content)}
-                              title="Copy response"
-                            >
-                              <Copy size={11} /> Copy
-                            </button>
-                          </div>
-                          <span className="msg-time">{formatTime(msg.time)}</span>
-                        </>
-                      ) : (
-                        <>
-                          <div className="msg-bubble-user">{msg.content}</div>
-                          <span className="msg-time">{formatTime(msg.time)}</span>
-                        </>
-                      )}
-                    </div>
-
+                {searchQuery && filteredMessages.length === 0 ? (
+                  <div className="empty-state">
+                    <p>No messages matching "<strong>{searchQuery}</strong>"</p>
                   </div>
-                ))}
+                ) : (
+                  (searchQuery ? filteredMessages : messages).map((msg, i) => (
+                    <div key={msg.id || i} className={`msg-row ${msg.role}`}>
+                      {msg.role === "model" ? (
+                        <div className="msg-avatar">
+                          <DexioLogo size="sm" showText={false} />
+                        </div>
+                      ) : (
+                        <div className="msg-avatar-user">
+                          <User size={15} />
+                        </div>
+                      )}
+
+                      <div className="msg-content">
+                        {msg.role === "model" ? (
+                          <>
+                            <div className="msg-bubble-ai">
+                              <ReactMarkdown components={MarkdownComponents}>
+                                {msg.content}
+                              </ReactMarkdown>
+                              {streamingId === msg.id && <span className="streaming-cursor" />}
+                            </div>
+                            <div className="msg-actions">
+                              <button className="btn-copy" onClick={() => handleCopyMessage(msg.content)}>
+                                <Copy size={11} /> Copy
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="msg-bubble-user">{msg.content}</div>
+                        )}
+                        <span className="msg-time">{formatTime(msg.time)}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
 
                 {/* Typing indicator */}
                 {waiting && (
@@ -691,6 +787,7 @@ export default function Chat() {
                     <div className="msg-content">
                       <div className="typing-bubble">
                         <span /><span /><span />
+                        <span className="typing-label">Dexio is thinking…</span>
                       </div>
                     </div>
                   </div>
@@ -741,7 +838,7 @@ export default function Chat() {
               )}
             </div>
             <p className="input-hint">
-              Enter to send · Shift+Enter for new line · Double-click chat to rename
+              ⌘K focus · ⌘N new chat · ⌘F search · ⌘[ collapse sidebar
             </p>
           </div>
         </div>

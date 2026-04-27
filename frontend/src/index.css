@@ -771,17 +771,6 @@ input, textarea { font-family: var(--font-body); }
   .msg-bubble-user { font-size: 14px; }
 }
 
-/* Timestamp */
-.msg-time {
-  font-size: 10px;
-  font-family: var(--font-mono);
-  color: var(--text3);
-  letter-spacing: 0.03em;
-  padding: 0 2px;
-}
-
-.msg-row.user .msg-time { text-align: right; }
-
 /* Markdown inside AI bubble */
 .msg-bubble-ai {
   color: #d4d4d8;
@@ -1043,24 +1032,6 @@ input, textarea { font-family: var(--font-body); }
   border-color: rgba(16,185,129,0.2);
 }
 
-/* Typing indicator */
-.typing-bubble {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  padding: 14px 0;
-}
-
-.typing-bubble span {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--text3);
-  animation: bounce 1.2s ease infinite;
-}
-
-.typing-bubble span:nth-child(2) { animation-delay: 0.15s; }
-.typing-bubble span:nth-child(3) { animation-delay: 0.3s; }
-
 /* ── Input area ─────────────────────────────────────────────────────────── */
 .input-area {
   padding: 12px 20px 20px;
@@ -1254,6 +1225,136 @@ input, textarea { font-family: var(--font-body); }
   vertical-align: text-bottom;
   animation: cursorBlink 0.8s ease infinite;
   border-radius: 1px;
+}
+
+/* ── Sidebar collapse (desktop only) ────────────────────────────────────── */
+.sidebar.collapsed {
+  width: 64px;
+}
+
+.sidebar.collapsed .sidebar-head {
+  padding: 18px 10px 14px;
+}
+
+.sidebar.collapsed .sidebar-head-actions {
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.collapse-btn { display: none; }
+
+@media (min-width: 769px) {
+  .collapse-btn { display: flex; }
+}
+
+/* ── Topbar actions ─────────────────────────────────────────────────────── */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.topbar-actions .btn-icon.active {
+  background: rgba(16,185,129,0.12);
+  color: var(--accent);
+}
+
+.font-size-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.font-size-label {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text3);
+  letter-spacing: 0.05em;
+}
+
+/* ── Search bar ─────────────────────────────────────────────────────────── */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  background: rgba(16,185,129,0.04);
+  border-bottom: 1px solid rgba(16,185,129,0.12);
+  animation: fadeIn 0.15s ease both;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: var(--text);
+}
+
+.search-input::placeholder { color: var(--text3); }
+
+.search-count {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* ── Timestamp — hidden, shown on row hover ─────────────────────────────── */
+.msg-time {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text3);
+  letter-spacing: 0.03em;
+  padding: 2px 2px 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.msg-row:hover .msg-time { opacity: 1; }
+.msg-row.user .msg-time   { text-align: right; }
+
+@media (max-width: 768px) {
+  .msg-time { opacity: 0.6; }
+}
+
+/* ── Typing indicator with label ────────────────────────────────────────── */
+.typing-bubble {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.typing-bubble span:not(.typing-label) {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.6;
+  animation: bounce 1.2s ease infinite;
+  flex-shrink: 0;
+}
+
+.typing-bubble span:nth-child(2) { animation-delay: 0.15s; }
+.typing-bubble span:nth-child(3) { animation-delay: 0.3s; }
+
+.typing-label {
+  font-size: 12px;
+  color: var(--text3);
+  font-family: var(--font-body);
+  margin-left: 4px;
+  font-style: italic;
+}
+
+/* ── Input hint — hide on mobile ────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .input-hint { display: none; }
 }
 
 @keyframes cursorBlink {

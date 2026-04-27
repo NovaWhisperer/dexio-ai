@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom"
 import { api } from "../services/api"
 import { useAuth } from "../context/useAuth"
 import DexioLogo from "../components/DexioLogo"
-import toast, { Toaster } from "react-hot-toast"
+import { CustomToaster } from "../components/Toast"
+import toast from "react-hot-toast"
 
 const Background3D = lazy(() => import("../components/Background3D"))
 
@@ -43,19 +44,7 @@ export default function Register() {
       <Suspense fallback={null}>
         <Background3D variant="auth" />
       </Suspense>
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: "#18181b",
-            color: "#f4f4f5",
-            border: "1px solid #27272a",
-            fontSize: "13px",
-            borderRadius: "10px",
-          },
-          error: { iconTheme: { primary: "#f87171", secondary: "#18181b" } },
-        }}
-      />
+      <CustomToaster />
 
       <div className="auth-card glass auth-card-wrap">
         <div className="auth-logo">
