@@ -10,7 +10,7 @@ import DexioLogo from "../components/DexioLogo"
 import {
   User, Menu, X, Plus, Send, Square, Copy,
   Trash2, LogOut, MessageSquare, Search, Type,
-  ChevronLeft
+  ChevronLeft, RotateCcw
 } from "lucide-react"
 
 // ── Lazy loaded heavy components ──────────────────────────────────────────
