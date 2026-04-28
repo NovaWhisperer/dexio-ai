@@ -9,8 +9,7 @@ import { CustomToaster } from "../components/Toast"
 import DexioLogo from "../components/DexioLogo"
 import {
   User, Menu, X, Plus, Send, Square, Copy,
-  Trash2, LogOut, MessageSquare, Search, Type,
-  ChevronLeft, RotateCcw
+  Trash2, LogOut, MessageSquare, ChevronLeft
 } from "lucide-react"
 
 // ── Lazy loaded heavy components ──────────────────────────────────────────
@@ -32,12 +31,12 @@ function loadStyle() {
           ...mod.oneDark,
           'pre[class*="language-"]': {
             ...mod.oneDark['pre[class*="language-"]'],
-            background: "#111115",
+            background: "#0d0d10",
             border: "none",
             boxShadow: "none",
             margin: 0,
-            borderRadius: "12px",
-            padding: "18px 20px",
+            borderRadius: "0 0 12px 12px",
+            padding: "18px 20px 20px",
             overflowX: "auto",
             lineHeight: "1.75",
             fontSize: "13px",
@@ -57,7 +56,33 @@ function loadStyle() {
   return stylePromise
 }
 
-// ── Code block with hover copy + language badge ───────────────────────────
+// ── Language dot color map ────────────────────────────────────────────────
+const LANG_COLORS = {
+  javascript: "#f7df1e",
+  js:         "#f7df1e",
+  typescript: "#3178c6",
+  ts:         "#3178c6",
+  python:     "#3572A5",
+  py:         "#3572A5",
+  rust:       "#dea584",
+  go:         "#00add8",
+  java:       "#b07219",
+  css:        "#563d7c",
+  html:       "#e34c26",
+  bash:       "#10b981",
+  sh:         "#10b981",
+  shell:      "#10b981",
+  json:       "#f4f4f5",
+  sql:        "#e38c00",
+  cpp:        "#f34b7d",
+  c:          "#555555",
+  ruby:       "#701516",
+  php:        "#4F5D95",
+  swift:      "#F05138",
+  kotlin:     "#A97BFF",
+}
+
+// ── Code block with header bar ────────────────────────────────────────────
 function CodeBlock({ language, children }) {
   const [copied, setCopied] = useState(false)
   const [style, setStyle]   = useState(cachedStyle)
@@ -80,27 +105,32 @@ function CodeBlock({ language, children }) {
     ? language.charAt(0).toUpperCase() + language.slice(1)
     : "Code"
 
+  const dotColor = LANG_COLORS[language?.toLowerCase()] || "#71717a"
+
   return (
     <div className="code-block-wrap">
-      {/* Language badge — bottom left */}
-      <span className="code-lang-badge">{displayLang}</span>
-
-      {/* Copy button — top right, hover only */}
-      <button
-        className={`btn-copy-code${copied ? " copied" : ""}`}
-        onClick={handleCopy}
-      >
-        {copied ? (
-          <>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            Copied!
-          </>
-        ) : (
-          <><Copy size={11} /> Copy</>
-        )}
-      </button>
+      {/* Header bar */}
+      <div className="code-header">
+        <div className="code-lang-pill">
+          <span className="code-lang-dot" style={{ background: dotColor }} />
+          <span className="code-lang-name">{displayLang}</span>
+        </div>
+        <button
+          className={`btn-copy-code${copied ? " copied" : ""}`}
+          onClick={handleCopy}
+        >
+          {copied ? (
+            <>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Copied!
+            </>
+          ) : (
+            <><Copy size={11} /> Copy</>
+          )}
+        </button>
+      </div>
 
       <Suspense fallback={<pre className="code-fallback">{children}</pre>}>
         {style ? (
@@ -111,11 +141,11 @@ function CodeBlock({ language, children }) {
             wrapLines={false}
             customStyle={{
               margin: 0,
-              padding: "18px 20px 32px",
-              background: "#111115",
+              padding: "18px 20px 20px",
+              background: "#0d0d10",
               border: "none",
               boxShadow: "none",
-              borderRadius: "12px",
+              borderRadius: "0 0 12px 12px",
               fontSize: "13px",
               lineHeight: "1.75",
               overflowX: "auto",
@@ -152,10 +182,6 @@ function formatTime(date) {
   return new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 }
 
-// ── Font size options ─────────────────────────────────────────────────────
-const FONT_SIZES = ["sm", "md", "lg"]
-const FONT_SIZE_MAP = { sm: "13px", md: "15px", lg: "17px" }
-
 // ── Suggested prompts ─────────────────────────────────────────────────────
 const PROMPTS = [
   "Help me write code",
@@ -184,9 +210,6 @@ export default function Chat() {
   const [renameValue, setRenameValue]   = useState("")
   const [streamingId, setStreamingId]   = useState(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
-  const [searchQuery, setSearchQuery]   = useState("")
-  const [showSearch, setShowSearch]     = useState(false)
-  const [fontSize, setFontSize]         = useState("md")
 
   const streamingContentRef = useRef("")
   const socketRef           = useRef(null)
@@ -195,12 +218,6 @@ export default function Chat() {
   const renameRef           = useRef(null)
   const stoppedRef          = useRef(false)
   const messagesAreaRef     = useRef(null)
-  const searchRef           = useRef(null)
-
-  // ── Apply font size to root ───────────────────────────────────────────────
-  useEffect(() => {
-    document.documentElement.style.setProperty("--chat-font-size", FONT_SIZE_MAP[fontSize])
-  }, [fontSize])
 
   // ── Load messages ────────────────────────────────────────────────────────
   const loadMessages = useCallback(async (chatId) => {
@@ -240,7 +257,7 @@ export default function Chat() {
     loadChats()
   }, [loadMessages])
 
-  // ── Auto-focus textarea when chat selected ───────────────────────────────
+  // ── Auto-focus textarea ──────────────────────────────────────────────────
   useEffect(() => {
     if (activeChatId && !loadingMsgs) {
       setTimeout(() => textareaRef.current?.focus(), 100)
@@ -276,11 +293,6 @@ export default function Chat() {
     if (renamingId) renameRef.current?.focus()
   }, [renamingId])
 
-  // ── Focus search input ───────────────────────────────────────────────────
-  useEffect(() => {
-    if (showSearch) searchRef.current?.focus()
-  }, [showSearch])
-
   // ── Close sidebar on outside click ──────────────────────────────────────
   useEffect(() => {
     function handleOutside(e) {
@@ -296,40 +308,14 @@ export default function Chat() {
   useEffect(() => {
     function handleKeys(e) {
       const mod = e.metaKey || e.ctrlKey
-
-      // Cmd/Ctrl + K → focus input
-      if (mod && e.key === "k") {
-        e.preventDefault()
-        textareaRef.current?.focus()
-      }
-
-      // Cmd/Ctrl + N → new chat
-      if (mod && e.key === "n") {
-        e.preventDefault()
-        handleNewChat()
-      }
-
-      // Cmd/Ctrl + F → toggle message search
-      if (mod && e.key === "f" && activeChatId) {
-        e.preventDefault()
-        setShowSearch(prev => !prev)
-      }
-
-      // Escape → close search or sidebar
-      if (e.key === "Escape") {
-        if (showSearch) { setShowSearch(false); setSearchQuery("") }
-        if (sidebarOpen) setSidebarOpen(false)
-      }
-
-      // [ → toggle sidebar collapse (desktop)
-      if (mod && e.key === "[") {
-        e.preventDefault()
-        setSidebarCollapsed(prev => !prev)
-      }
+      if (mod && e.key === "k") { e.preventDefault(); textareaRef.current?.focus() }
+      if (mod && e.key === "n") { e.preventDefault(); handleNewChat() }
+      if (e.key === "Escape" && sidebarOpen) setSidebarOpen(false)
+      if (mod && e.key === "[") { e.preventDefault(); setSidebarCollapsed(prev => !prev) }
     }
     document.addEventListener("keydown", handleKeys)
     return () => document.removeEventListener("keydown", handleKeys)
-  }, [activeChatId, showSearch, sidebarOpen])
+  }, [sidebarOpen])
 
   // ── Socket setup ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -380,7 +366,7 @@ export default function Chat() {
     }
   }, [])
 
-  // ── New chat ─────────────────────────────────────────────────────────────
+  // ── Handlers ─────────────────────────────────────────────────────────────
   async function handleNewChat() {
     try {
       const data = await api.createChat({ title: "New Chat" })
@@ -394,19 +380,15 @@ export default function Chat() {
     }
   }
 
-  // ── Select chat ──────────────────────────────────────────────────────────
   function selectChat(chatId) {
     if (chatId === activeChatId) { setSidebarOpen(false); return }
     setActiveChatId(chatId)
     setWaiting(false)
     stoppedRef.current = false
     setSidebarOpen(false)
-    setShowSearch(false)
-    setSearchQuery("")
     loadMessages(chatId)
   }
 
-  // ── Delete chat ──────────────────────────────────────────────────────────
   async function handleDeleteChat(e, chatId) {
     e.stopPropagation()
     setDeletingId(chatId)
@@ -428,7 +410,6 @@ export default function Chat() {
     }
   }
 
-  // ── Rename chat ──────────────────────────────────────────────────────────
   function handleDoubleClick(e, chat) {
     e.stopPropagation()
     setRenamingId(chat._id)
@@ -453,7 +434,6 @@ export default function Chat() {
     if (e.key === "Escape") { setRenamingId(null) }
   }
 
-  // ── Send message ─────────────────────────────────────────────────────────
   const sendMessage = useCallback(() => {
     const content = input.trim()
     if (!content || !activeChatId || waiting) return
@@ -466,10 +446,6 @@ export default function Chat() {
 
   function handleKeyDown(e) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage() }
-  }
-
-  function scrollToBottom() {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
   function handlePrompt(prompt) {
@@ -492,23 +468,11 @@ export default function Chat() {
     }
   }
 
-  function cycleFontSize() {
-    setFontSize(prev => {
-      const idx = FONT_SIZES.indexOf(prev)
-      return FONT_SIZES[(idx + 1) % FONT_SIZES.length]
-    })
-  }
-
   async function handleLogout() {
     disconnectSocket()
     await logout()
     navigate("/login")
   }
-
-  // ── Filtered messages for search ─────────────────────────────────────────
-  const filteredMessages = searchQuery.trim()
-    ? messages.filter(m => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
-    : messages
 
   const activeChat = chats.find(c => c._id === activeChatId)
   const initials   = user
@@ -523,7 +487,6 @@ export default function Chat() {
 
       <CustomToaster />
 
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-label="Close sidebar" />
       )}
@@ -545,7 +508,6 @@ export default function Chat() {
                 <Plus size={16} />
               </button>
             )}
-            {/* Collapse toggle — desktop only */}
             <button
               className="btn-icon collapse-btn"
               onClick={() => setSidebarCollapsed(prev => !prev)}
@@ -639,73 +601,25 @@ export default function Chat() {
           <button className="btn-icon hamburger-btn" onClick={() => setSidebarOpen(true)}>
             <Menu size={20} />
           </button>
-
           <div className="topbar-center">
             <div className="status-dot" style={{ background: connected ? "var(--accent)" : "var(--text3)" }} />
             <span>{activeChat ? activeChat.title : "Dexio AI"}</span>
             {!connected && <span className="reconnecting-text">— reconnecting…</span>}
           </div>
-
-          {/* Topbar actions */}
-          <div className="topbar-actions">
-            {activeChatId && (
-              <button
-                className={`btn-icon${showSearch ? " active" : ""}`}
-                onClick={() => { setShowSearch(p => !p); setSearchQuery("") }}
-                title="Search messages (⌘F)"
-              >
-                <Search size={16} />
-              </button>
-            )}
-            <button
-              className="btn-icon font-size-btn"
-              onClick={cycleFontSize}
-              title={`Font size: ${fontSize} (click to cycle)`}
-            >
-              <Type size={16} />
-              <span className="font-size-label">{fontSize.toUpperCase()}</span>
-            </button>
-          </div>
         </div>
 
-        {/* Search bar */}
-        {showSearch && (
-          <div className="search-bar">
-            <Search size={14} style={{ color: "var(--text3)", flexShrink: 0 }} />
-            <input
-              ref={searchRef}
-              className="search-input"
-              placeholder="Search in conversation…"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-              <span className="search-count">
-                {filteredMessages.length} result{filteredMessages.length !== 1 ? "s" : ""}
-              </span>
-            )}
-            <button className="btn-icon" onClick={() => { setShowSearch(false); setSearchQuery("") }}>
-              <X size={14} />
-            </button>
-          </div>
-        )}
-
         {/* ── Messages ──────────────────────────────────────────────────── */}
-        <div className="messages-area" ref={messagesAreaRef} style={{ fontSize: FONT_SIZE_MAP[fontSize] }}>
+        <div className="messages-area" ref={messagesAreaRef}>
           <div className="messages-col">
 
             {!activeChatId ? (
               <div className="empty-state">
-                <div className="empty-logo-wrap">
-                  <DexioLogo size="md" showText={false} />
-                </div>
+                <div className="empty-logo-wrap"><DexioLogo size="md" showText={false} /></div>
                 <h3>How can I help you today?</h3>
                 <p>Create a new chat to get started with Dexio AI.</p>
                 <div className="prompt-chips">
                   {PROMPTS.map(p => (
-                    <button key={p} className="prompt-chip" onClick={handleNewChat}>
-                      {p}
-                    </button>
+                    <button key={p} className="prompt-chip" onClick={handleNewChat}>{p}</button>
                   ))}
                 </div>
               </div>
@@ -721,69 +635,56 @@ export default function Chat() {
 
             ) : messages.length === 0 && !waiting ? (
               <div className="empty-state">
-                <div className="empty-logo-wrap">
-                  <DexioLogo size="md" showText={false} />
-                </div>
+                <div className="empty-logo-wrap"><DexioLogo size="md" showText={false} /></div>
                 <h3>Start the conversation</h3>
                 <p>Ask me anything — I'm here to help.</p>
                 <div className="prompt-chips">
                   {PROMPTS.map(p => (
-                    <button key={p} className="prompt-chip" onClick={() => handlePrompt(p)}>
-                      {p}
-                    </button>
+                    <button key={p} className="prompt-chip" onClick={() => handlePrompt(p)}>{p}</button>
                   ))}
                 </div>
               </div>
 
             ) : (
               <>
-                {searchQuery && filteredMessages.length === 0 ? (
-                  <div className="empty-state">
-                    <p>No messages matching "<strong>{searchQuery}</strong>"</p>
-                  </div>
-                ) : (
-                  (searchQuery ? filteredMessages : messages).map((msg, i) => (
-                    <div key={msg.id || i} className={`msg-row ${msg.role}`}>
-                      {msg.role === "model" ? (
-                        <div className="msg-avatar">
-                          <DexioLogo size="sm" showText={false} />
-                        </div>
-                      ) : (
-                        <div className="msg-avatar-user">
-                          <User size={15} />
-                        </div>
-                      )}
-
-                      <div className="msg-content">
-                        {msg.role === "model" ? (
-                          <>
-                            <div className="msg-bubble-ai">
-                              <ReactMarkdown components={MarkdownComponents}>
-                                {msg.content}
-                              </ReactMarkdown>
-                              {streamingId === msg.id && <span className="streaming-cursor" />}
-                            </div>
-                            <div className="msg-actions">
-                              <button className="btn-copy" onClick={() => handleCopyMessage(msg.content)}>
-                                <Copy size={11} /> Copy
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="msg-bubble-user">{msg.content}</div>
-                        )}
-                        <span className="msg-time">{formatTime(msg.time)}</span>
+                {messages.map((msg, i) => (
+                  <div key={msg.id || i} className={`msg-row ${msg.role}`}>
+                    {msg.role === "model" ? (
+                      <div className="msg-avatar">
+                        <DexioLogo size="sm" showText={false} />
                       </div>
-                    </div>
-                  ))
-                )}
+                    ) : (
+                      <div className="msg-avatar-user">
+                        <User size={15} />
+                      </div>
+                    )}
 
-                {/* Typing indicator */}
+                    <div className="msg-content">
+                      {msg.role === "model" ? (
+                        <>
+                          <div className="msg-bubble-ai">
+                            <ReactMarkdown components={MarkdownComponents}>
+                              {msg.content}
+                            </ReactMarkdown>
+                            {streamingId === msg.id && <span className="streaming-cursor" />}
+                          </div>
+                          <div className="msg-actions">
+                            <button className="btn-copy" onClick={() => handleCopyMessage(msg.content)}>
+                              <Copy size={11} /> Copy
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="msg-bubble-user">{msg.content}</div>
+                      )}
+                      <span className="msg-time">{formatTime(msg.time)}</span>
+                    </div>
+                  </div>
+                ))}
+
                 {waiting && (
                   <div className="msg-row model">
-                    <div className="msg-avatar">
-                      <DexioLogo size="sm" showText={false} />
-                    </div>
+                    <div className="msg-avatar"><DexioLogo size="sm" showText={false} /></div>
                     <div className="msg-content">
                       <div className="typing-bubble">
                         <span /><span /><span />
@@ -799,9 +700,8 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* Scroll to bottom button */}
         {showScrollBtn && (
-          <button className="btn-scroll-bottom" onClick={scrollToBottom} title="Scroll to bottom">
+          <button className="btn-scroll-bottom" onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })} title="Scroll to bottom">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 12 15 18 9" />
             </svg>
@@ -837,9 +737,7 @@ export default function Chat() {
                 </button>
               )}
             </div>
-            <p className="input-hint">
-              ⌘K focus · ⌘N new chat · ⌘F search · ⌘[ collapse sidebar
-            </p>
+            <p className="input-hint">⌘K focus · ⌘N new chat · ⌘[ collapse sidebar</p>
           </div>
         </div>
 
