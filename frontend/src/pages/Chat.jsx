@@ -743,7 +743,7 @@ export default function Chat() {
                 </button>
               )}
             </div>
-            <p className="input-hint">⌘K focus · ⌘N new chat · ⌘[ collapse sidebar</p>
+            <p className="input-hint">Dexio AI — ask anything, build anything</p>
           </div>
         </div>
 

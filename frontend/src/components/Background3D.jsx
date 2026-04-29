@@ -12,7 +12,7 @@ const auroraVertexShader = `
 
 const auroraFragmentShader = `
   uniform float uTime;
-  uniform vec2  uResolution;
+  uniform vec2 uResolution;
 
   float random(vec2 st) {
     return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
@@ -32,7 +32,7 @@ const auroraFragmentShader = `
   float fbm(vec2 st) {
     float value = 0.0;
     float amplitude = 0.5;
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 4; i++) {
       value += amplitude * noise(st);
       st *= 2.0;
       amplitude *= 0.5;
@@ -45,55 +45,37 @@ const auroraFragmentShader = `
     vec2 st = uv;
     st.x *= uResolution.x / uResolution.y;
 
-    float t = uTime * 0.05;
+    float t = uTime * 0.08;
 
     vec3 color = vec3(0.01, 0.01, 0.02);
 
-    // Color palette
-    vec3 emerald  = vec3(0.06, 0.73, 0.51);
-    vec3 teal     = vec3(0.02, 0.45, 0.35);
-    vec3 deepTeal = vec3(0.02, 0.18, 0.28);
-    vec3 dark     = vec3(0.01, 0.12, 0.09);
+    vec3 emerald = vec3(0.06, 0.73, 0.51);
+    vec3 teal    = vec3(0.02, 0.45, 0.35);
+    vec3 dark    = vec3(0.01, 0.12, 0.09);
 
-    // Wave 1 — main emerald band
-    float wave1 = 0.38 + sin(uv.x * 1.5 - t) * 0.32 + cos(uv.x * 1.0 + t * 0.5) * 0.22;
+    float wave1 = 0.4 + sin(uv.x * 1.5 - t) * 0.35 + cos(uv.x * 1.0 + t * 0.5) * 0.25;
     float n1    = fbm(st * 1.5 + vec2(t * 0.15, -t * 0.1));
-    float dist1 = uv.y - wave1 + (n1 - 0.5) * 0.55;
-    float glow1 = exp(-abs(dist1) * 1.1);
-    float core1 = exp(-abs(dist1) * 3.2);
+    float dist1 = uv.y - wave1 + (n1 - 0.5) * 0.6;
+    float glow1 = exp(-abs(dist1) * 1.2);
+    float core1 = exp(-abs(dist1) * 3.0);
 
-    // Wave 2 — upper teal band
-    float wave2 = 0.62 + cos(uv.x * 2.0 + t * 0.8) * 0.28 + sin(uv.x * 0.5 - t * 0.3) * 0.28;
-    float n2    = fbm(st * 2.0 - vec2(t * 0.2, t * 0.18));
-    float dist2 = uv.y - wave2 + (n2 - 0.5) * 0.65;
-    float glow2 = exp(-abs(dist2) * 1.4);
+    float wave2 = 0.6 + cos(uv.x * 2.0 + t * 0.8) * 0.3 + sin(uv.x * 0.5 - t * 0.3) * 0.3;
+    float n2    = fbm(st * 2.0 - vec2(t * 0.2, t * 0.2));
+    float dist2 = uv.y - wave2 + (n2 - 0.5) * 0.7;
+    float glow2 = exp(-abs(dist2) * 1.5);
     float core2 = exp(-abs(dist2) * 3.5);
 
-    // Wave 3 — deep blue-teal accent layer
-    float wave3 = 0.25 + sin(uv.x * 0.8 + t * 0.4) * 0.2 + cos(uv.x * 1.8 - t * 0.6) * 0.15;
-    float n3    = fbm(st * 1.2 + vec2(-t * 0.1, t * 0.12));
-    float dist3 = uv.y - wave3 + (n3 - 0.5) * 0.4;
-    float glow3 = exp(-abs(dist3) * 1.6);
+    vec3 wave1Color = mix(emerald, teal, uv.x + n1 * 0.5);
+    color += wave1Color * glow1 * 0.4;
+    color += mix(vec3(0.5, 1.0, 0.8), wave1Color, 0.5) * core1 * 0.5;
 
-    // Horizontal color sweep (left→teal, right→emerald)
-    float hSwipe = smoothstep(0.0, 1.0, uv.x + sin(t * 0.3) * 0.1);
+    vec3 wave2Color = mix(teal, dark, 1.0 - uv.x + n2 * 0.5);
+    color += wave2Color * glow2 * 0.35;
+    color += mix(vec3(0.4, 0.9, 0.7), wave2Color, 0.5) * core2 * 0.4;
 
-    vec3 wave1Color = mix(teal, emerald, hSwipe + n1 * 0.4);
-    color += wave1Color * glow1 * 0.42;
-    color += mix(vec3(0.5, 1.0, 0.8), wave1Color, 0.4) * core1 * 0.52;
+    float ambientFlow = fbm(st * 1.0 + vec2(t * 0.03, t * 0.05));
+    color += mix(dark, teal, ambientFlow) * ambientFlow * 0.18;
 
-    vec3 wave2Color = mix(emerald, teal, 1.0 - hSwipe + n2 * 0.4);
-    color += wave2Color * glow2 * 0.32;
-    color += mix(vec3(0.4, 0.9, 0.7), wave2Color, 0.5) * core2 * 0.38;
-
-    // Deep teal accent
-    color += mix(deepTeal, teal, n3) * glow3 * 0.25;
-
-    // Ambient flow
-    float ambientFlow = fbm(st * 0.9 + vec2(t * 0.03, t * 0.05));
-    color += mix(dark, teal, ambientFlow) * ambientFlow * 0.15;
-
-    // Vignette
     float vignette = uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y);
     color *= clamp(vignette * 12.0 + 0.2, 0.0, 1.0);
 
@@ -103,12 +85,13 @@ const auroraFragmentShader = `
 
 function AuroraShader({ opacity = 1 }) {
   const materialRef = useRef(null)
-  const { size }    = useThree()
-  const timerRef    = useRef(new THREE.Timer())
+  const { size } = useThree()
+  // Use THREE.Timer instead of THREE.Clock to avoid deprecation warning
+  const timerRef = useRef(new THREE.Timer())
 
   const uniforms = useMemo(() => ({
     uTime:       { value: 0 },
-    uResolution: { value: new THREE.Vector2(size.width, size.height) },
+    uResolution: { value: new THREE.Vector2(800, 600) }
   }), [])
 
   useFrame(() => {
@@ -145,13 +128,11 @@ const gridVertexShader = `
   void main() {
     vec3 pos = position;
 
-    // Idle breathing wave
-    float idle = sin(uTime * 0.8 + pos.x * 0.3 + pos.y * 0.3) * 0.5 + 0.5;
     float wave = sin(pos.x * 0.2 + uTime * 0.1) * cos(pos.y * 0.2 + uTime * 0.1) * 0.02;
     pos.z += wave;
 
     float dist     = distance(pos.xy, uMousePos.xy);
-    float radius   = 6.0;
+    float radius   = 4.0;
     float strength = 0.0;
 
     if (dist < radius && uActive > 0.01) {
@@ -163,12 +144,10 @@ const gridVertexShader = `
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     gl_Position  = projectionMatrix * mvPosition;
-    gl_PointSize = (2.2 + strength * 1.8) * (15.0 / -mvPosition.z);
+    gl_PointSize = (1.5 + strength * 1.5) * (15.0 / -mvPosition.z);
 
     float distFromCenter = length(pos.xy);
-    // Breathing base alpha even when mouse is away
-    float breathAlpha  = 0.08 + idle * 0.06;
-    float targetAlpha  = mix(breathAlpha, 1.0, strength);
+    float targetAlpha    = mix(0.1, 1.0, strength);
     vAlpha = smoothstep(22.0, 4.0, distFromCenter) * targetAlpha;
   }
 `
@@ -180,19 +159,19 @@ const gridFragmentShader = `
   void main() {
     float dist = distance(gl_PointCoord, vec2(0.5));
     if (dist > 0.5) discard;
-    float alpha = smoothstep(0.5, 0.2, dist) * vAlpha;
+    float alpha = smoothstep(0.5, 0.3, dist) * vAlpha;
     gl_FragColor = vec4(uColor, alpha);
   }
 `
 
 function InteractiveGrid() {
-  const { camera }     = useThree()
+  const { camera } = useThree()
   const materialRef    = useRef(null)
-  // Allocate vectors outside useFrame to avoid GC pressure
   const targetMousePos = useRef(new THREE.Vector3(0, 0, 0))
-  const vecRef         = useRef(new THREE.Vector3())
-  const dirRef         = useRef(new THREE.Vector3())
-  const posRef         = useRef(new THREE.Vector3())
+  // Reusable vectors — allocated once, never inside useFrame
+  const _vec           = useRef(new THREE.Vector3())
+  const _dir           = useRef(new THREE.Vector3())
+  const _pos           = useRef(new THREE.Vector3())
   const activeRef      = useRef(0)
   const isMovingRef    = useRef(false)
   const pointerRef     = useRef(new THREE.Vector2(0, 0))
@@ -204,14 +183,14 @@ function InteractiveGrid() {
     const handleMove = (e) => {
       isMovingRef.current = true
       clearTimeout(timeout)
-      timeout = setTimeout(() => { isMovingRef.current = false }, 600)
+      timeout = setTimeout(() => { isMovingRef.current = false }, 500)
       pointerRef.current.x =  (e.clientX / window.innerWidth)  * 2 - 1
       pointerRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1
     }
 
     const handleLeave = () => { isMovingRef.current = false }
 
-    window.addEventListener("pointermove", handleMove, { passive: true })
+    window.addEventListener("pointermove", handleMove)
     document.addEventListener("mouseleave", handleLeave)
     return () => {
       window.removeEventListener("pointermove", handleMove)
@@ -220,9 +199,9 @@ function InteractiveGrid() {
     }
   }, [])
 
-  const countX  = 80
-  const countY  = 45
-  const spacing = 0.55
+  const countX  = 100
+  const countY  = 60
+  const spacing = 0.45
 
   const positions = useMemo(() => {
     const pos     = new Float32Array(countX * countY * 3)
@@ -238,7 +217,7 @@ function InteractiveGrid() {
       }
     }
     return pos
-  }, [])
+  }, [countX, countY])
 
   const uniforms = useMemo(() => ({
     uTime:     { value: 0 },
@@ -255,25 +234,27 @@ function InteractiveGrid() {
     activeRef.current = THREE.MathUtils.lerp(
       activeRef.current,
       isMovingRef.current ? 1.0 : 0.0,
-      isMovingRef.current ? 0.08 : 0.025
+      isMovingRef.current ? 0.08 : 0.02
     )
     materialRef.current.uniforms.uActive.value = activeRef.current
 
-    // Reuse allocated vectors — no GC
-    vecRef.current.set(pointerRef.current.x, pointerRef.current.y, 0.5)
-    vecRef.current.unproject(camera)
-    dirRef.current.copy(vecRef.current).sub(camera.position).normalize()
-    const distance = (-5 - camera.position.z) / dirRef.current.z
-    posRef.current.copy(camera.position).addScaledVector(dirRef.current, distance)
+    const vec      = _vec.current.set(pointerRef.current.x, pointerRef.current.y, 0.5)
+    vec.unproject(camera)
+    const dir      = _dir.current.copy(vec).sub(camera.position).normalize()
+    const distance = (-5 - camera.position.z) / dir.z
+    _pos.current.copy(camera.position).addScaledVector(dir, distance)
 
-    targetMousePos.current.lerp(posRef.current, 0.05)
+    targetMousePos.current.lerp(_pos.current, 0.05)
     materialRef.current.uniforms.uMousePos.value.copy(targetMousePos.current)
   })
 
   return (
     <points>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+        <bufferAttribute
+          attach="attributes-position"
+          args={[positions, 3]}
+        />
       </bufferGeometry>
       <shaderMaterial
         ref={materialRef}
@@ -288,7 +269,7 @@ function InteractiveGrid() {
   )
 }
 
-// ── Mobile CSS fallback ───────────────────────────────────────────────────
+// ── Mobile CSS-only fallback background ───────────────────────────────────
 function MobileFallback({ variant }) {
   return (
     <div style={{
@@ -297,28 +278,26 @@ function MobileFallback({ variant }) {
       zIndex: 0,
       pointerEvents: "none",
       background: variant === "auth"
-        ? "radial-gradient(ellipse 70% 45% at 50% 110%, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.04) 45%, transparent 70%), #09090b"
+        ? "radial-gradient(ellipse 70% 50% at 50% 100%, rgba(16,185,129,0.14) 0%, rgba(16,185,129,0.04) 50%, transparent 70%), #09090b"
         : "radial-gradient(ellipse 50% 30% at 50% 110%, rgba(16,185,129,0.06) 0%, transparent 60%), #09090b",
     }} />
   )
 }
 
-// ── WebGL Canvas with context-loss recovery ───────────────────────────────
-function WebGLCanvas({ variant }) {
-  const [lost, setLost] = useState(false)
+// ── Canvas with built-in context-loss recovery ────────────────────────────
+function RecoverableCanvas({ variant }) {
+  const [contextLost, setContextLost] = useState(false)
 
   function handleCreated({ gl }) {
     const canvas = gl.domElement
     canvas.addEventListener("webglcontextlost", (e) => {
       e.preventDefault()
-      setLost(true)
-    })
-    canvas.addEventListener("webglcontextrestored", () => {
-      setLost(false)
-    })
+      console.warn("WebGL context lost — switching to CSS fallback")
+      setContextLost(true)
+    }, { once: true })
   }
 
-  if (lost) return <MobileFallback variant={variant} />
+  if (contextLost) return <MobileFallback variant={variant} />
 
   return (
     <Canvas
@@ -326,11 +305,15 @@ function WebGLCanvas({ variant }) {
       dpr={[1, 1.5]}
       style={{ position: "absolute", inset: 0 }}
       onCreated={handleCreated}
-      gl={{ powerPreference: "high-performance", antialias: false }}
+      gl={{
+        powerPreference: "high-performance",
+        antialias: false,
+        failIfMajorPerformanceCaveat: false,
+      }}
     >
       {variant === "auth"
         ? <AuroraShader />
-        : <AuroraShader opacity={0.28} />
+        : <AuroraShader opacity={0.25} />
       }
       <InteractiveGrid />
     </Canvas>
@@ -353,17 +336,17 @@ export default function Background3D({ variant = "chat" }) {
       pointerEvents: "none",
     }}>
       <WebGLErrorBoundary fallback={<MobileFallback variant={variant} />}>
-        <WebGLCanvas variant={variant} />
+        <RecoverableCanvas variant={variant} />
       </WebGLErrorBoundary>
 
-      {/* Vignette overlay */}
+      {/* Vignette */}
       <div style={{
         position: "absolute",
         inset: 0,
         zIndex: 2,
         background: variant === "chat"
-          ? "radial-gradient(circle at center, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.92) 100%)"
-          : "radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.88) 100%)",
+          ? "radial-gradient(circle at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.95) 100%)"
+          : "radial-gradient(circle at center, transparent 35%, rgba(0,0,0,0.92) 100%)",
         pointerEvents: "none",
       }} />
     </div>
