@@ -316,13 +316,11 @@ export default function Chat() {
       setWaiting(false)
       userScrolledUpRef.current = false // snap back to bottom for new response
 
-      // ── Improved streaming: word-chunk based, ~2-3s total ──────────────
-      // Split into natural chunks: words + punctuation boundaries
-      const words   = clean.split(/(\s+)/)   // keep whitespace tokens
-      let wordIdx   = 0
-      // Aim for ~2.5s for short responses, scale up slightly for longer ones
-      const targetMs  = Math.min(4000, Math.max(1800, clean.length * 2.5))
-      const delayPer  = Math.max(12, targetMs / words.length)
+      // ── Streaming: word-chunk based with background-tab fast-flush ──────
+      const words  = clean.split(/(\s+)/)   // keep whitespace tokens
+      let wordIdx  = 0
+      const targetMs = Math.min(4000, Math.max(1800, clean.length * 2.5))
+      const delayPer = Math.max(12, targetMs / words.length)
 
       function typeNext() {
         if (stoppedRef.current) {
@@ -330,6 +328,17 @@ export default function Chat() {
           setStreamingId(null)
           return
         }
+
+        // Tab is hidden → flush all remaining text instantly, no delay
+        if (document.hidden) {
+          streamingContentRef.current = clean
+          setMessages(prev =>
+            prev.map(m => m.id === msgId ? { ...m, content: clean } : m)
+          )
+          setStreamingId(null)
+          return
+        }
+
         if (wordIdx < words.length) {
           streamingContentRef.current += words[wordIdx]
           const currentText = streamingContentRef.current
@@ -338,12 +347,10 @@ export default function Chat() {
           )
           wordIdx++
 
-          // Only scroll if user hasn't scrolled up
           if (!userScrolledUpRef.current) {
             bottomRef.current?.scrollIntoView({ behavior: "instant" })
           }
 
-          // Slight random jitter makes it feel organic (±30% of base delay)
           const jitter = (Math.random() - 0.5) * delayPer * 0.6
           setTimeout(typeNext, Math.max(8, delayPer + jitter))
         } else {

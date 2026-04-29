@@ -199,9 +199,9 @@ function InteractiveGrid() {
     }
   }, [])
 
-  const countX  = 100
-  const countY  = 60
-  const spacing = 0.45
+  const countX  = 70
+  const countY  = 40
+  const spacing = 0.55
 
   const positions = useMemo(() => {
     const pos     = new Float32Array(countX * countY * 3)
@@ -284,6 +284,10 @@ function MobileFallback({ variant }) {
   )
 }
 
+// ── Track WebGL health globally — once lost, stay on CSS fallback ─────────
+// This persists across remounts so repeated context loss doesn't loop
+let webglPermanentlyDisabled = false
+
 // ── Canvas with built-in context-loss recovery ────────────────────────────
 function RecoverableCanvas({ variant }) {
   const [contextLost, setContextLost] = useState(false)
@@ -292,9 +296,9 @@ function RecoverableCanvas({ variant }) {
     const canvas = gl.domElement
     canvas.addEventListener("webglcontextlost", (e) => {
       e.preventDefault()
-      console.warn("WebGL context lost — switching to CSS fallback")
+      webglPermanentlyDisabled = true   // never try WebGL again this session
       setContextLost(true)
-    }, { once: true })
+    }, { once: true })                  // { once } = fires at most one time
   }
 
   if (contextLost) return <MobileFallback variant={variant} />
@@ -302,12 +306,14 @@ function RecoverableCanvas({ variant }) {
   return (
     <Canvas
       camera={{ position: [0, 0, 5], fov: 60 }}
-      dpr={[1, 1.5]}
+      dpr={[1, 1]}                      /* cap at 1× — biggest single GPU load reduction */
       style={{ position: "absolute", inset: 0 }}
       onCreated={handleCreated}
       gl={{
-        powerPreference: "high-performance",
+        powerPreference: "default",     /* don't request high-perf GPU — reduces crash rate */
         antialias: false,
+        alpha: false,
+        preserveDrawingBuffer: false,
         failIfMajorPerformanceCaveat: false,
       }}
     >
@@ -324,7 +330,10 @@ function RecoverableCanvas({ variant }) {
 export default function Background3D({ variant = "chat" }) {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768
 
-  if (isMobile) return <MobileFallback variant={variant} />
+  // Skip canvas entirely on mobile OR if WebGL has already crashed this session
+  if (isMobile || webglPermanentlyDisabled) {
+    return <MobileFallback variant={variant} />
+  }
 
   return (
     <div style={{

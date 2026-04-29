@@ -786,8 +786,8 @@ body { overflow-x: hidden; }
   align-items: center;
   justify-content: space-between;
   padding: 8px 14px;
-  /* Explicit solid-ish bg so SyntaxHighlighter's injected dark bg cannot bleed through */
-  background: #161618;
+  /* Explicit solid bg — slightly lighter than code body to create header/body distinction */
+  background: #1a1a1e;
   border-bottom: 1px solid rgba(255,255,255,0.07);
   gap: 8px;
   position: relative;
@@ -801,21 +801,24 @@ body { overflow-x: hidden; }
   align-items: center;
   gap: 7px;
   min-width: 0;
+  /* No background — inherits code-header bg cleanly */
 }
 
 .code-lang-dot {
-  width: 8px; height: 8px;
+  width: 7px; height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
+  opacity: 0.9;
 }
 
 .code-lang-name {
   font-size: 11px;
   font-family: var(--font-mono);
   font-weight: 500;
-  color: #71717a;
-  letter-spacing: 0.04em;
+  color: #9ca3af;
+  letter-spacing: 0.06em;
   white-space: nowrap;
+  text-transform: lowercase;
 }
 
 .btn-copy-code {
@@ -954,12 +957,13 @@ body { overflow-x: hidden; }
 /* ── Streaming cursor ───────────────────────────────────────────────────── */
 .streaming-cursor {
   display: inline-block;
-  width: 2px; height: 1em;
+  width: 6px; height: 6px;
+  border-radius: 50%;
   background: var(--accent);
-  margin-left: 1px;
-  vertical-align: text-bottom;
-  animation: cursorBlink 0.75s ease infinite;
-  border-radius: 1px;
+  margin-left: 4px;
+  vertical-align: middle;
+  animation: streamingPulse 1s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 /* ── Typing indicator ───────────────────────────────────────────────────── */
@@ -1137,6 +1141,10 @@ body { overflow-x: hidden; }
 @keyframes cursorBlink {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
+}
+@keyframes streamingPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.3; transform: scale(0.6); }
 }
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(16px); }
