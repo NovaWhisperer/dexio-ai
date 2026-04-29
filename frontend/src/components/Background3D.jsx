@@ -32,7 +32,7 @@ const auroraFragmentShader = `
   float fbm(vec2 st) {
     float value = 0.0;
     float amplitude = 0.5;
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 3; i++) {
       value += amplitude * noise(st);
       st *= 2.0;
       amplitude *= 0.5;
@@ -72,9 +72,6 @@ const auroraFragmentShader = `
     vec3 wave2Color = mix(teal, dark, 1.0 - uv.x + n2 * 0.5);
     color += wave2Color * glow2 * 0.35;
     color += mix(vec3(0.4, 0.9, 0.7), wave2Color, 0.5) * core2 * 0.4;
-
-    float ambientFlow = fbm(st * 1.0 + vec2(t * 0.03, t * 0.05));
-    color += mix(dark, teal, ambientFlow) * ambientFlow * 0.18;
 
     float vignette = uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y);
     color *= clamp(vignette * 12.0 + 0.2, 0.0, 1.0);
@@ -291,17 +288,25 @@ let webglPermanentlyDisabled = false
 // ── Canvas with built-in context-loss recovery ────────────────────────────
 function RecoverableCanvas({ variant }) {
   const [contextLost, setContextLost] = useState(false)
+  const [ready, setReady]             = useState(false)
+
+  // Delay mount by 1.5s — gives browser time to settle before WebGL init
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 1500)
+    return () => clearTimeout(t)
+  }, [])
 
   function handleCreated({ gl }) {
     const canvas = gl.domElement
     canvas.addEventListener("webglcontextlost", (e) => {
       e.preventDefault()
-      webglPermanentlyDisabled = true   // never try WebGL again this session
+      webglPermanentlyDisabled = true
       setContextLost(true)
-    }, { once: true })                  // { once } = fires at most one time
+    }, { once: true })
   }
 
   if (contextLost) return <MobileFallback variant={variant} />
+  if (!ready)      return null   // render nothing until delay completes
 
   return (
     <Canvas

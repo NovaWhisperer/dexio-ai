@@ -663,11 +663,10 @@ export default function Chat() {
                     <div className="msg-content">
                       {msg.role === "model" ? (
                         <>
-                          <div className="msg-bubble-ai">
+                          <div className={`msg-bubble-ai${streamingId === msg.id ? " streaming" : ""}`}>
                             <ReactMarkdown components={MarkdownComponents}>
                               {msg.content}
                             </ReactMarkdown>
-                            {streamingId === msg.id && <span className="streaming-cursor" />}
                           </div>
                           {/* Copy + time row under AI bubble */}
                           <div className="msg-meta">

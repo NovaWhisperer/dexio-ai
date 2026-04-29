@@ -893,8 +893,8 @@ body { overflow-x: hidden; }
   max-width: 100%;
 }
 
-/* Strip SyntaxHighlighter dark bg wrapper */
-.code-block-wrap > div > div {
+/* Strip SyntaxHighlighter dark bg wrapper — target only the highlighter div, not .code-header */
+.code-block-wrap > div:not(.code-header) {
   margin: 0 !important;
   border: none !important;
   border-radius: 0 0 10px 10px !important;
@@ -955,15 +955,16 @@ body { overflow-x: hidden; }
 }
 
 /* ── Streaming cursor ───────────────────────────────────────────────────── */
-.streaming-cursor {
-  display: inline-block;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  margin-left: 4px;
-  vertical-align: middle;
-  animation: streamingPulse 1s ease-in-out infinite;
-  flex-shrink: 0;
+/* Active streaming — subtle left border pulse shows text is live */
+.msg-bubble-ai.streaming {
+  border-left: 2px solid var(--accent);
+  padding-left: 12px;
+  animation: streamingEdge 2s ease-in-out infinite;
+}
+
+/* When streaming ends the class is removed — transition fades it out */
+.msg-bubble-ai {
+  transition: border-left-color 0.4s ease, padding-left 0.4s ease;
 }
 
 /* ── Typing indicator ───────────────────────────────────────────────────── */
@@ -1142,9 +1143,9 @@ body { overflow-x: hidden; }
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
 }
-@keyframes streamingPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.3; transform: scale(0.6); }
+@keyframes streamingEdge {
+  0%, 100% { border-left-color: var(--accent); }
+  50%       { border-left-color: rgba(16,185,129,0.3); }
 }
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(16px); }
