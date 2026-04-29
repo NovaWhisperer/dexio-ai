@@ -12,74 +12,63 @@ import {
   Trash2, LogOut, MessageSquare, ChevronLeft
 } from "lucide-react"
 
-// ── Lazy loaded heavy components ──────────────────────────────────────────
-const Background3D = lazy(() => import("../components/Background3D"))
+const Background3D      = lazy(() => import("../components/Background3D"))
 const SyntaxHighlighter = lazy(() =>
   import("react-syntax-highlighter").then(mod => ({ default: mod.Prism }))
 )
 
-// ── Load syntax style once at module level ────────────────────────────────
-let cachedStyle = null
+// ── Syntax style — load once ──────────────────────────────────────────────
+let cachedStyle  = null
 let stylePromise = null
 
 function loadStyle() {
   if (cachedStyle) return Promise.resolve(cachedStyle)
   if (!stylePromise) {
-    stylePromise = import("react-syntax-highlighter/dist/esm/styles/prism")
-      .then(mod => {
-        cachedStyle = {
-          ...mod.oneDark,
-          'pre[class*="language-"]': {
-            ...mod.oneDark['pre[class*="language-"]'],
-            background: "#0d0d10",
-            border: "none",
-            boxShadow: "none",
-            margin: 0,
-            borderRadius: "0 0 12px 12px",
-            padding: "18px 20px 20px",
-            overflowX: "auto",
-            lineHeight: "1.75",
-            fontSize: "13px",
-            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-          },
-          'code[class*="language-"]': {
-            ...mod.oneDark['code[class*="language-"]'],
-            background: "none",
-            border: "none",
-            fontSize: "13px",
-            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-          },
-        }
-        return cachedStyle
-      })
+    stylePromise = import("react-syntax-highlighter/dist/esm/styles/prism").then(mod => {
+      cachedStyle = {
+        ...mod.oneDark,
+        'pre[class*="language-"]': {
+          ...mod.oneDark['pre[class*="language-"]'],
+          background: "#0d0d10",
+          border: "none",
+          boxShadow: "none",
+          margin: 0,
+          borderRadius: "0 0 10px 10px",
+          padding: "16px 18px 20px",
+          overflowX: "auto",
+          lineHeight: "1.75",
+          fontSize: "13px",
+          fontFamily: "'JetBrains Mono','Fira Code',monospace",
+        },
+        'code[class*="language-"]': {
+          ...mod.oneDark['code[class*="language-"]'],
+          background: "none",
+          border: "none",
+          fontSize: "13px",
+          fontFamily: "'JetBrains Mono','Fira Code',monospace",
+        },
+      }
+      return cachedStyle
+    })
   }
   return stylePromise
 }
 
-// ── Language dot color map ────────────────────────────────────────────────
+// ── Language dot colours ──────────────────────────────────────────────────
 const LANG_COLORS = {
-  javascript: "#f7df1e",
-  js:         "#f7df1e",
-  typescript: "#3178c6",
-  ts:         "#3178c6",
-  python:     "#3572A5",
-  py:         "#3572A5",
-  rust:       "#dea584",
-  go:         "#00add8",
-  java:       "#b07219",
-  css:        "#563d7c",
-  html:       "#e34c26",
-  bash:       "#10b981",
-  sh:         "#10b981",
-  shell:      "#10b981",
-  json:       "#f4f4f5",
-  sql:        "#e38c00",
-  cpp:        "#f34b7d",
-  c:          "#555555",
-  ruby:       "#701516",
-  php:        "#4F5D95",
-  swift:      "#F05138",
-  kotlin:     "#A97BFF",
+  javascript:"#f7df1e", js:"#f7df1e",
+  typescript:"#3178c6", ts:"#3178c6",
+  python:"#3572A5",     py:"#3572A5",
+  rust:"#dea584",       go:"#00add8",
+  java:"#b07219",       css:"#563d7c",
+  html:"#e34c26",       bash:"#10b981",
+  sh:"#10b981",         shell:"#10b981",
+  json:"#f4f4f5",       sql:"#e38c00",
+  cpp:"#f34b7d",        c:"#aaaaaa",
+  ruby:"#701516",       php:"#4F5D95",
+  swift:"#F05138",      kotlin:"#A97BFF",
+  jsx:"#61dafb",        tsx:"#61dafb",
+  yaml:"#cb171e",       toml:"#9c4221",
 }
 
 // ── Code block with header bar ────────────────────────────────────────────
@@ -87,38 +76,29 @@ function CodeBlock({ language, children }) {
   const [copied, setCopied] = useState(false)
   const [style, setStyle]   = useState(cachedStyle)
 
-  useEffect(() => {
-    if (!cachedStyle) loadStyle().then(s => setStyle(s))
-  }, [])
+  useEffect(() => { if (!cachedStyle) loadStyle().then(setStyle) }, [])
 
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(children)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch {
-      toast.error("Copy failed")
-    }
+    } catch { toast.error("Copy failed") }
   }
 
   const displayLang = language
     ? language.charAt(0).toUpperCase() + language.slice(1)
     : "Code"
-
   const dotColor = LANG_COLORS[language?.toLowerCase()] || "#71717a"
 
   return (
     <div className="code-block-wrap">
-      {/* Header bar */}
       <div className="code-header">
         <div className="code-lang-pill">
           <span className="code-lang-dot" style={{ background: dotColor }} />
           <span className="code-lang-name">{displayLang}</span>
         </div>
-        <button
-          className={`btn-copy-code${copied ? " copied" : ""}`}
-          onClick={handleCopy}
-        >
+        <button className={`btn-copy-code${copied ? " copied" : ""}`} onClick={handleCopy}>
           {copied ? (
             <>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -141,20 +121,18 @@ function CodeBlock({ language, children }) {
             wrapLines={false}
             customStyle={{
               margin: 0,
-              padding: "18px 20px 20px",
+              padding: "16px 18px 20px",
               background: "#0d0d10",
               border: "none",
               boxShadow: "none",
-              borderRadius: "0 0 12px 12px",
+              borderRadius: "0 0 10px 10px",
               fontSize: "13px",
               lineHeight: "1.75",
               overflowX: "auto",
               WebkitOverflowScrolling: "touch",
-              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+              fontFamily: "'JetBrains Mono','Fira Code',monospace",
             }}
-            codeTagProps={{
-              style: { fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: "13px" }
-            }}
+            codeTagProps={{ style: { fontFamily: "'JetBrains Mono','Fira Code',monospace", fontSize: "13px" } }}
           >
             {children}
           </SyntaxHighlighter>
@@ -166,7 +144,6 @@ function CodeBlock({ language, children }) {
   )
 }
 
-// ── Markdown renderer ─────────────────────────────────────────────────────
 const MarkdownComponents = {
   code({ inline, className, children, ...props }) {
     const match = /language-(\w+)/.exec(className || "")
@@ -177,12 +154,10 @@ const MarkdownComponents = {
   }
 }
 
-// ── Format timestamp ──────────────────────────────────────────────────────
 function formatTime(date) {
   return new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 }
 
-// ── Suggested prompts ─────────────────────────────────────────────────────
 const PROMPTS = [
   "Help me write code",
   "Explain a concept",
@@ -192,9 +167,8 @@ const PROMPTS = [
 
 export default function Chat() {
   const { user, logout } = useAuth()
-  const navigate = useNavigate()
+  const navigate         = useNavigate()
 
-  // ── State ────────────────────────────────────────────────────────────────
   const [chats, setChats]               = useState([])
   const [activeChatId, setActiveChatId] = useState(null)
   const [messages, setMessages]         = useState([])
@@ -218,27 +192,36 @@ export default function Chat() {
   const renameRef           = useRef(null)
   const stoppedRef          = useRef(false)
   const messagesAreaRef     = useRef(null)
+  // Track whether user has manually scrolled up — don't hijack scroll
+  const userScrolledUpRef   = useRef(false)
 
-  // ── Load messages ────────────────────────────────────────────────────────
+  // ── Scroll helpers ────────────────────────────────────────────────────────
+  function isNearBottom() {
+    const el = messagesAreaRef.current
+    if (!el) return true
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 180
+  }
+
+  function scrollToBottom(smooth = true) {
+    bottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "instant" })
+  }
+
+  // ── Load messages ─────────────────────────────────────────────────────────
   const loadMessages = useCallback(async (chatId) => {
     setLoadingMsgs(true)
     setMessages([])
+    userScrolledUpRef.current = false
     try {
       const data = await api.getChatMessages(chatId)
       setMessages(data.messages.map(m => ({
-        id: m._id,
-        role: m.role,
-        content: m.content,
+        id: m._id, role: m.role, content: m.content,
         time: m.createdAt || new Date().toISOString(),
       })))
-    } catch {
-      toast.error("Failed to load messages")
-    } finally {
-      setLoadingMsgs(false)
-    }
+    } catch { toast.error("Failed to load messages") }
+    finally { setLoadingMsgs(false) }
   }, [])
 
-  // ── Load chats on mount ──────────────────────────────────────────────────
+  // ── Load chats on mount ───────────────────────────────────────────────────
   useEffect(() => {
     async function loadChats() {
       try {
@@ -248,39 +231,37 @@ export default function Chat() {
           setActiveChatId(data.chats[0]._id)
           loadMessages(data.chats[0]._id)
         }
-      } catch {
-        toast.error("Failed to load chats")
-      } finally {
-        setLoadingChats(false)
-      }
+      } catch { toast.error("Failed to load chats") }
+      finally { setLoadingChats(false) }
     }
     loadChats()
   }, [loadMessages])
 
-  // ── Auto-focus textarea ──────────────────────────────────────────────────
+  // ── Auto-focus textarea ───────────────────────────────────────────────────
   useEffect(() => {
-    if (activeChatId && !loadingMsgs) {
-      setTimeout(() => textareaRef.current?.focus(), 100)
-    }
+    if (activeChatId && !loadingMsgs) setTimeout(() => textareaRef.current?.focus(), 100)
   }, [activeChatId, loadingMsgs])
 
-  // ── Scroll to bottom ─────────────────────────────────────────────────────
+  // ── Scroll to bottom when messages change (if not scrolled up) ────────────
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+    if (!userScrolledUpRef.current) scrollToBottom(false)
   }, [messages, waiting])
 
-  // ── Track scroll for scroll-to-bottom button ─────────────────────────────
+  // ── Track scroll ──────────────────────────────────────────────────────────
   useEffect(() => {
     const el = messagesAreaRef.current
     if (!el) return
     function handleScroll() {
-      setShowScrollBtn(el.scrollHeight - el.scrollTop - el.clientHeight > 200)
+      const nearBottom = isNearBottom()
+      setShowScrollBtn(!nearBottom)
+      // If user scrolled up significantly, pause auto-scroll
+      userScrolledUpRef.current = !nearBottom
     }
-    el.addEventListener("scroll", handleScroll)
+    el.addEventListener("scroll", handleScroll, { passive: true })
     return () => el.removeEventListener("scroll", handleScroll)
   }, [])
 
-  // ── Auto-resize textarea ─────────────────────────────────────────────────
+  // ── Auto-resize textarea ──────────────────────────────────────────────────
   useEffect(() => {
     const el = textareaRef.current
     if (!el) return
@@ -288,12 +269,8 @@ export default function Chat() {
     el.style.height = Math.min(el.scrollHeight, 160) + "px"
   }, [input])
 
-  // ── Focus rename input ───────────────────────────────────────────────────
-  useEffect(() => {
-    if (renamingId) renameRef.current?.focus()
-  }, [renamingId])
+  useEffect(() => { if (renamingId) renameRef.current?.focus() }, [renamingId])
 
-  // ── Close sidebar on outside click ──────────────────────────────────────
   useEffect(() => {
     function handleOutside(e) {
       if (sidebarOpen && !e.target.closest(".sidebar") && !e.target.closest(".hamburger-btn")) {
@@ -304,20 +281,19 @@ export default function Chat() {
     return () => document.removeEventListener("mousedown", handleOutside)
   }, [sidebarOpen])
 
-  // ── Keyboard shortcuts ───────────────────────────────────────────────────
   useEffect(() => {
     function handleKeys(e) {
       const mod = e.metaKey || e.ctrlKey
       if (mod && e.key === "k") { e.preventDefault(); textareaRef.current?.focus() }
       if (mod && e.key === "n") { e.preventDefault(); handleNewChat() }
       if (e.key === "Escape" && sidebarOpen) setSidebarOpen(false)
-      if (mod && e.key === "[") { e.preventDefault(); setSidebarCollapsed(prev => !prev) }
+      if (mod && e.key === "[") { e.preventDefault(); setSidebarCollapsed(p => !p) }
     }
     document.addEventListener("keydown", handleKeys)
     return () => document.removeEventListener("keydown", handleKeys)
   }, [sidebarOpen])
 
-  // ── Socket setup ─────────────────────────────────────────────────────────
+  // ── Socket ────────────────────────────────────────────────────────────────
   useEffect(() => {
     const socket = connectSocket()
     socketRef.current = socket
@@ -327,25 +303,49 @@ export default function Chat() {
 
     socket.on("ai-response", ({ content }) => {
       if (stoppedRef.current) { stoppedRef.current = false; return }
+
       const clean = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim()
+      if (!clean) return
 
       const msgId = Date.now().toString()
       setStreamingId(msgId)
       streamingContentRef.current = ""
-      setMessages(prev => [...prev, { id: msgId, role: "model", content: "", time: new Date().toISOString() }])
+      setMessages(prev => [...prev, {
+        id: msgId, role: "model", content: "", time: new Date().toISOString()
+      }])
       setWaiting(false)
+      userScrolledUpRef.current = false // snap back to bottom for new response
 
-      let i = 0
-      const speed = Math.max(8, Math.min(20, Math.floor(15000 / clean.length)))
+      // ── Improved streaming: word-chunk based, ~2-3s total ──────────────
+      // Split into natural chunks: words + punctuation boundaries
+      const words   = clean.split(/(\s+)/)   // keep whitespace tokens
+      let wordIdx   = 0
+      // Aim for ~2.5s for short responses, scale up slightly for longer ones
+      const targetMs  = Math.min(4000, Math.max(1800, clean.length * 2.5))
+      const delayPer  = Math.max(12, targetMs / words.length)
 
       function typeNext() {
-        if (stoppedRef.current) { stoppedRef.current = false; setStreamingId(null); return }
-        if (i < clean.length) {
-          streamingContentRef.current += clean[i]
+        if (stoppedRef.current) {
+          stoppedRef.current = false
+          setStreamingId(null)
+          return
+        }
+        if (wordIdx < words.length) {
+          streamingContentRef.current += words[wordIdx]
           const currentText = streamingContentRef.current
-          setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: currentText } : m))
-          i++
-          setTimeout(typeNext, speed)
+          setMessages(prev =>
+            prev.map(m => m.id === msgId ? { ...m, content: currentText } : m)
+          )
+          wordIdx++
+
+          // Only scroll if user hasn't scrolled up
+          if (!userScrolledUpRef.current) {
+            bottomRef.current?.scrollIntoView({ behavior: "instant" })
+          }
+
+          // Slight random jitter makes it feel organic (±30% of base delay)
+          const jitter = (Math.random() - 0.5) * delayPer * 0.6
+          setTimeout(typeNext, Math.max(8, delayPer + jitter))
         } else {
           setStreamingId(null)
         }
@@ -366,18 +366,16 @@ export default function Chat() {
     }
   }, [])
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────────
   async function handleNewChat() {
     try {
-      const data = await api.createChat({ title: "New Chat" })
+      const data    = await api.createChat({ title: "New Chat" })
       const newChat = data.chat
       setChats(prev => [newChat, ...prev])
       setActiveChatId(newChat._id)
       setMessages([])
       setSidebarOpen(false)
-    } catch {
-      toast.error("Couldn't create chat")
-    }
+    } catch { toast.error("Couldn't create chat") }
   }
 
   function selectChat(chatId) {
@@ -403,11 +401,8 @@ export default function Chat() {
         if (next) loadMessages(next._id)
       }
       toast.success("Chat deleted")
-    } catch {
-      toast.error("Couldn't delete chat")
-    } finally {
-      setDeletingId(null)
-    }
+    } catch { toast.error("Couldn't delete chat") }
+    finally  { setDeletingId(null) }
   }
 
   function handleDoubleClick(e, chat) {
@@ -424,9 +419,7 @@ export default function Chat() {
       await api.updateChatTitle(chatId, trimmed)
       setChats(prev => prev.map(c => c._id === chatId ? { ...c, title: trimmed } : c))
       toast.success("Chat renamed")
-    } catch {
-      toast.error("Couldn't rename chat")
-    }
+    } catch { toast.error("Couldn't rename chat") }
   }
 
   function handleRenameKeyDown(e, chatId) {
@@ -437,8 +430,11 @@ export default function Chat() {
   const sendMessage = useCallback(() => {
     const content = input.trim()
     if (!content || !activeChatId || waiting) return
-    stoppedRef.current = false
-    setMessages(prev => [...prev, { id: Date.now().toString(), role: "user", content, time: new Date().toISOString() }])
+    stoppedRef.current        = false
+    userScrolledUpRef.current = false
+    setMessages(prev => [...prev, {
+      id: Date.now().toString(), role: "user", content, time: new Date().toISOString()
+    }])
     setInput("")
     setWaiting(true)
     socketRef.current.emit("ai-message", { chat: activeChatId, content })
@@ -463,9 +459,7 @@ export default function Chat() {
     try {
       await navigator.clipboard.writeText(content)
       toast.success("Copied", { duration: 1500 })
-    } catch {
-      toast.error("Copy failed")
-    }
+    } catch { toast.error("Copy failed") }
   }
 
   async function handleLogout() {
@@ -488,7 +482,7 @@ export default function Chat() {
       <CustomToaster />
 
       {sidebarOpen && (
-        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-label="Close sidebar" />
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
@@ -498,9 +492,7 @@ export default function Chat() {
           <div className="sidebar-head-actions">
             {!sidebarCollapsed && (
               <button className="btn-new-chat" onClick={handleNewChat}>
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <Plus size={14} /> New chat
-                </span>
+                <Plus size={14} /> New chat
               </button>
             )}
             {sidebarCollapsed && (
@@ -510,10 +502,13 @@ export default function Chat() {
             )}
             <button
               className="btn-icon collapse-btn"
-              onClick={() => setSidebarCollapsed(prev => !prev)}
-              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              onClick={() => setSidebarCollapsed(p => !p)}
+              title={sidebarCollapsed ? "Expand" : "Collapse"}
             >
-              <ChevronLeft size={16} style={{ transform: sidebarCollapsed ? "rotate(180deg)" : "none", transition: "transform 0.25s" }} />
+              <ChevronLeft size={16} style={{
+                transform: sidebarCollapsed ? "rotate(180deg)" : "none",
+                transition: "transform 0.25s"
+              }} />
             </button>
             <button className="btn-icon sidebar-close-btn" onClick={() => setSidebarOpen(false)}>
               <X size={16} />
@@ -572,8 +567,8 @@ export default function Chat() {
 
         <div className="sidebar-foot">
           {sidebarCollapsed ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-              <div className="user-avatar" style={{ margin: "0 auto" }}>{initials}</div>
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+              <div className="user-avatar">{initials}</div>
               <button onClick={handleLogout} title="Logout" className="btn-icon logout-btn">
                 <LogOut size={15} />
               </button>
@@ -593,7 +588,7 @@ export default function Chat() {
         </div>
       </aside>
 
-      {/* ── Main area ───────────────────────────────────────────────────── */}
+      {/* ── Main ────────────────────────────────────────────────────────── */}
       <div className="chat-main">
 
         {/* Topbar */}
@@ -603,12 +598,12 @@ export default function Chat() {
           </button>
           <div className="topbar-center">
             <div className="status-dot" style={{ background: connected ? "var(--accent)" : "var(--text3)" }} />
-            <span>{activeChat ? activeChat.title : "Dexio AI"}</span>
-            {!connected && <span className="reconnecting-text">— reconnecting…</span>}
+            <span className="topbar-title">{activeChat?.title ?? "Dexio AI"}</span>
+            {!connected && <span className="reconnecting-text">reconnecting…</span>}
           </div>
         </div>
 
-        {/* ── Messages ──────────────────────────────────────────────────── */}
+        {/* Messages */}
         <div className="messages-area" ref={messagesAreaRef}>
           <div className="messages-col">
 
@@ -616,7 +611,7 @@ export default function Chat() {
               <div className="empty-state">
                 <div className="empty-logo-wrap"><DexioLogo size="md" showText={false} /></div>
                 <h3>How can I help you today?</h3>
-                <p>Create a new chat to get started with Dexio AI.</p>
+                <p>Create a new chat to get started.</p>
                 <div className="prompt-chips">
                   {PROMPTS.map(p => (
                     <button key={p} className="prompt-chip" onClick={handleNewChat}>{p}</button>
@@ -649,14 +644,13 @@ export default function Chat() {
               <>
                 {messages.map((msg, i) => (
                   <div key={msg.id || i} className={`msg-row ${msg.role}`}>
+
                     {msg.role === "model" ? (
                       <div className="msg-avatar">
                         <DexioLogo size="sm" showText={false} />
                       </div>
                     ) : (
-                      <div className="msg-avatar-user">
-                        <User size={15} />
-                      </div>
+                      <div className="msg-avatar-user"><User size={14} /></div>
                     )}
 
                     <div className="msg-content">
@@ -668,17 +662,24 @@ export default function Chat() {
                             </ReactMarkdown>
                             {streamingId === msg.id && <span className="streaming-cursor" />}
                           </div>
-                          <div className="msg-actions">
+                          {/* Copy + time row under AI bubble */}
+                          <div className="msg-meta">
                             <button className="btn-copy" onClick={() => handleCopyMessage(msg.content)}>
                               <Copy size={11} /> Copy
                             </button>
+                            <span className="msg-time">{formatTime(msg.time)}</span>
                           </div>
                         </>
                       ) : (
-                        <div className="msg-bubble-user">{msg.content}</div>
+                        <>
+                          <div className="msg-bubble-user">{msg.content}</div>
+                          <div className="msg-meta msg-meta-user">
+                            <span className="msg-time">{formatTime(msg.time)}</span>
+                          </div>
+                        </>
                       )}
-                      <span className="msg-time">{formatTime(msg.time)}</span>
                     </div>
+
                   </div>
                 ))}
 
@@ -694,21 +695,26 @@ export default function Chat() {
                   </div>
                 )}
 
-                <div ref={bottomRef} />
+                <div ref={bottomRef} style={{ height: 1 }} />
               </>
             )}
           </div>
         </div>
 
+        {/* Scroll to bottom */}
         {showScrollBtn && (
-          <button className="btn-scroll-bottom" onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })} title="Scroll to bottom">
+          <button
+            className="btn-scroll-bottom"
+            onClick={() => { userScrolledUpRef.current = false; scrollToBottom() }}
+            title="Jump to latest"
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 12 15 18 9" />
             </svg>
           </button>
         )}
 
-        {/* ── Input ─────────────────────────────────────────────────────── */}
+        {/* Input */}
         <div className="input-area">
           <div className="input-col">
             <div className="input-glow" />
@@ -723,7 +729,7 @@ export default function Chat() {
                 disabled={!activeChatId || waiting}
               />
               {waiting ? (
-                <button className="btn-stop" onClick={handleStop} title="Stop">
+                <button className="btn-stop" onClick={handleStop} title="Stop generating">
                   <Square size={14} />
                 </button>
               ) : (
