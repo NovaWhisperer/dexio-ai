@@ -12,7 +12,6 @@ import {
   Trash2, LogOut, MessageSquare, ChevronLeft
 } from "lucide-react"
 
-const Background3D      = lazy(() => import("../components/Background3D"))
 const SyntaxHighlighter = lazy(() =>
   import("react-syntax-highlighter").then(mod => ({ default: mod.Prism }))
 )
@@ -482,10 +481,6 @@ export default function Chat() {
 
   return (
     <div className="chat-shell">
-      <Suspense fallback={null}>
-        <Background3D variant="chat" />
-      </Suspense>
-
       <CustomToaster />
 
       {sidebarOpen && (

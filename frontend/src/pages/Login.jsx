@@ -1,12 +1,10 @@
-import { useState, lazy, Suspense } from "react"
+import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { api } from "../services/api"
 import { useAuth } from "../context/useAuth"
 import DexioLogo from "../components/DexioLogo"
 import { CustomToaster } from "../components/Toast"
 import toast from "react-hot-toast"
-
-const Background3D = lazy(() => import("../components/Background3D"))
 
 export default function Login() {
   const navigate = useNavigate()
@@ -35,9 +33,6 @@ export default function Login() {
 
   return (
     <div className="auth-shell">
-      <Suspense fallback={null}>
-        <Background3D variant="auth" />
-      </Suspense>
       <CustomToaster />
 
       <div className="auth-card glass auth-card-wrap">

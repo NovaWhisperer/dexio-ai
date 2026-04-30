@@ -281,9 +281,10 @@ function MobileFallback({ variant }) {
   )
 }
 
-// ── Track WebGL crash count — allow 2 retries before giving up ───────────
+// ── Single instance — never remounts across routes ────────────────────────
+// Crash counter persists but limit is higher since context loss is rare now
 let webglCrashCount = 0
-const MAX_CRASHES   = 2
+const MAX_CRASHES   = 3
 
 // ── Canvas with built-in context-loss recovery ────────────────────────────
 function RecoverableCanvas({ variant }) {
