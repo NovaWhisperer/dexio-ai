@@ -74,11 +74,11 @@ body { overflow-x: hidden; }
   justify-content: center;
   padding: 24px 16px;
   position: relative;
-  z-index: 1;
+  /* No z-index — do not create stacking context that buries the WebGL canvas */
+  background: transparent;
   overflow-y: auto;
 }
 
-/* Keep centered on mobile — do NOT override to flex-start */
 @media (max-width: 480px) {
   .auth-shell { padding: 24px 16px; }
 }
@@ -193,8 +193,10 @@ body { overflow-x: hidden; }
   display: flex;
   height: 100vh;
   height: -webkit-fill-available;
-  overflow: hidden;
+  /* Do NOT use overflow:hidden here — it creates a stacking context
+     that traps position:fixed children and hides the WebGL background */
   position: relative;
+  isolation: isolate; /* contains sidebar z-index without trapping fixed elements */
 }
 
 .sidebar-overlay {

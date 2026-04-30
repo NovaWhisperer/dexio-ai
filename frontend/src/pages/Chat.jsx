@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react"
+import { createPortal } from "react-dom"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/useAuth"
 import { api } from "../services/api"
@@ -481,11 +482,17 @@ export default function Chat() {
     : "?"
 
   return (
-    <div className="chat-shell">
-      <Suspense fallback={null}>
-        <Background3D variant="chat" />
-      </Suspense>
+    <>
+      {/* Render background at document.body level via Portal —
+          prevents chat-shell stacking context from trapping the fixed canvas */}
+      {createPortal(
+        <Suspense fallback={null}>
+          <Background3D variant="chat" />
+        </Suspense>,
+        document.body
+      )}
 
+      <div className="chat-shell">
       <CustomToaster />
 
       {sidebarOpen && (
@@ -755,5 +762,6 @@ export default function Chat() {
 
       </div>
     </div>
+    </>
   )
 }

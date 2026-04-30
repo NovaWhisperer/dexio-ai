@@ -230,7 +230,7 @@ function InteractiveGrid() {
 
     activeRef.current = THREE.MathUtils.lerp(
       activeRef.current,
-      isMovingRef.current ? 1.0 : 0.0,
+      isMovingRef.current ? 1.0 : 0.12,  // floor at 0.12 — never fully invisible
       isMovingRef.current ? 0.08 : 0.02
     )
     materialRef.current.uniforms.uActive.value = activeRef.current
@@ -345,11 +345,11 @@ export default function Background3D({ variant = "chat" }) {
         <RecoverableCanvas variant={variant} />
       </WebGLErrorBoundary>
 
-      {/* Vignette */}
+      {/* Vignette — sits above canvas, below all page content */}
       <div style={{
         position: "absolute",
         inset: 0,
-        zIndex: 2,
+        zIndex: 1,
         background: variant === "chat"
           ? "radial-gradient(circle at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.75) 100%)"
           : "radial-gradient(circle at center, transparent 35%, rgba(0,0,0,0.88) 100%)",
