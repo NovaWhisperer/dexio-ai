@@ -144,7 +144,7 @@ const gridVertexShader = `
     gl_PointSize = (1.5 + strength * 1.5) * (15.0 / -mvPosition.z);
 
     float distFromCenter = length(pos.xy);
-    float targetAlpha    = mix(0.1, 1.0, strength);
+    float targetAlpha    = mix(0.25, 1.0, strength);
     vAlpha = smoothstep(22.0, 4.0, distFromCenter) * targetAlpha;
   }
 `
@@ -275,47 +275,39 @@ function MobileFallback({ variant }) {
       zIndex: 0,
       pointerEvents: "none",
       background: variant === "auth"
-        ? "radial-gradient(ellipse 70% 50% at 50% 100%, rgba(16,185,129,0.14) 0%, rgba(16,185,129,0.04) 50%, transparent 70%), #09090b"
-        : "radial-gradient(ellipse 50% 30% at 50% 110%, rgba(16,185,129,0.06) 0%, transparent 60%), #09090b",
+        ? "radial-gradient(ellipse 80% 60% at 50% 100%, rgba(16,185,129,0.22) 0%, rgba(16,185,129,0.08) 45%, transparent 70%), #09090b"
+        : "radial-gradient(ellipse 100% 50% at 50% 100%, rgba(16,185,129,0.15) 0%, rgba(16,185,129,0.05) 50%, transparent 75%), radial-gradient(ellipse 60% 30% at 20% 50%, rgba(16,185,129,0.06) 0%, transparent 60%), #09090b",
     }} />
   )
 }
 
-// ── Track WebGL health globally — once lost, stay on CSS fallback ─────────
-// This persists across remounts so repeated context loss doesn't loop
-let webglPermanentlyDisabled = false
+// ── Track WebGL crash count — allow 2 retries before giving up ───────────
+let webglCrashCount = 0
+const MAX_CRASHES   = 2
 
 // ── Canvas with built-in context-loss recovery ────────────────────────────
 function RecoverableCanvas({ variant }) {
   const [contextLost, setContextLost] = useState(false)
-  const [ready, setReady]             = useState(false)
-
-  // Delay mount by 1.5s — gives browser time to settle before WebGL init
-  useEffect(() => {
-    const t = setTimeout(() => setReady(true), 1500)
-    return () => clearTimeout(t)
-  }, [])
 
   function handleCreated({ gl }) {
     const canvas = gl.domElement
     canvas.addEventListener("webglcontextlost", (e) => {
       e.preventDefault()
-      webglPermanentlyDisabled = true
+      webglCrashCount++
       setContextLost(true)
     }, { once: true })
   }
 
   if (contextLost) return <MobileFallback variant={variant} />
-  if (!ready)      return null   // render nothing until delay completes
 
   return (
     <Canvas
       camera={{ position: [0, 0, 5], fov: 60 }}
-      dpr={[1, 1]}                      /* cap at 1× — biggest single GPU load reduction */
+      dpr={[1, 1]}
       style={{ position: "absolute", inset: 0 }}
       onCreated={handleCreated}
       gl={{
-        powerPreference: "default",     /* don't request high-perf GPU — reduces crash rate */
+        powerPreference: "default",
         antialias: false,
         alpha: false,
         preserveDrawingBuffer: false,
@@ -324,7 +316,7 @@ function RecoverableCanvas({ variant }) {
     >
       {variant === "auth"
         ? <AuroraShader />
-        : <AuroraShader opacity={0.25} />
+        : <AuroraShader opacity={0.45} />
       }
       <InteractiveGrid />
     </Canvas>
@@ -335,8 +327,8 @@ function RecoverableCanvas({ variant }) {
 export default function Background3D({ variant = "chat" }) {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768
 
-  // Skip canvas entirely on mobile OR if WebGL has already crashed this session
-  if (isMobile || webglPermanentlyDisabled) {
+  // Skip canvas on mobile OR if crashed too many times
+  if (isMobile || webglCrashCount >= MAX_CRASHES) {
     return <MobileFallback variant={variant} />
   }
 
@@ -359,8 +351,8 @@ export default function Background3D({ variant = "chat" }) {
         inset: 0,
         zIndex: 2,
         background: variant === "chat"
-          ? "radial-gradient(circle at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.95) 100%)"
-          : "radial-gradient(circle at center, transparent 35%, rgba(0,0,0,0.92) 100%)",
+          ? "radial-gradient(circle at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.75) 100%)"
+          : "radial-gradient(circle at center, transparent 35%, rgba(0,0,0,0.88) 100%)",
         pointerEvents: "none",
       }} />
     </div>
