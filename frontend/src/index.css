@@ -192,11 +192,10 @@ body { overflow-x: hidden; }
 .chat-shell {
   display: flex;
   height: 100vh;
-  height: -webkit-fill-available;
-  /* Do NOT use overflow:hidden here — it creates a stacking context
-     that traps position:fixed children and hides the WebGL background */
+  height: 100dvh;  /* shrinks when mobile keyboard opens */
+  overflow: hidden;
   position: relative;
-  isolation: isolate; /* contains sidebar z-index without trapping fixed elements */
+  isolation: isolate;
 }
 
 .sidebar-overlay {

@@ -98,7 +98,7 @@ function AuroraShader({ opacity = 1 }) {
     uResolution: { value: new THREE.Vector2(800, 600) },
   }), [])
 
-  useFrame((_, delta) => {
+  useFrame(() => {
     if (!materialRef.current) return
     if (document.hidden) return   // pause when tab not visible — saves GPU + prevents mobile crash
     timerRef.current.update()
@@ -157,14 +157,12 @@ const gridVertexShader = `
   float rippleStrength(vec2 dotXY, vec2 origin, float rTime) {
     if (rTime < 0.0) return 0.0;
     float dist  = distance(dotXY, origin);
-    float speed = 4.5;                        // world units per second
-    float front = rTime * speed;              // how far wave has traveled
-    float width = 2.5;                        // wave band width in world units
+    float speed = 2.8;                        // was 4.5 — slower, more water-like
+    float front = rTime * speed;
+    float width = 1.2;                        // was 2.5 — thinner ring, more precise
     float delta = dist - front;
-    // Wave front: dot lights up when front reaches it, fades as front passes
     float wave  = exp(-delta * delta / (width * width));
-    // Decay: ripple fades out over time
-    float decay = exp(-rTime * 0.55);
+    float decay = exp(-rTime * 0.9);          // was 0.55 — fades faster
     return wave * decay;
   }
 
@@ -265,27 +263,27 @@ function InteractiveGrid() {
   const ripples     = useRef([makeRipple(), makeRipple(), makeRipple()])
   const rippleIdx   = useRef(0)               // next slot to write
 
-  // Helper: unproject a screen NDC coord to world XY at z=-5
-  function ndcToWorld(nx, ny) {
-    _vec.current.set(nx, ny, 0.5)
-    _vec.current.unproject(camera)
-    _dir.current.copy(_vec.current).sub(camera.position).normalize()
-    const dist = (-5 - camera.position.z) / _dir.current.z
-    _pos.current.copy(camera.position).addScaledVector(_dir.current, dist)
-    return { x: _pos.current.x, y: _pos.current.y }
-  }
-
-  function spawnRipple(nx, ny) {
-    const { x, y } = ndcToWorld(nx, ny)
-    const slot = rippleIdx.current % 3
-    ripples.current[slot] = { x, y, t: 0.0 }
-    rippleIdx.current++
-  }
-
   useEffect(() => {
     let moveTimeout
 
-    // ── Pointer (desktop) ───────────────────────────────────────────────
+    // ── Helpers defined inside effect — no dependency issue ──────────────
+    function ndcToWorld(nx, ny) {
+      _vec.current.set(nx, ny, 0.5)
+      _vec.current.unproject(camera)
+      _dir.current.copy(_vec.current).sub(camera.position).normalize()
+      const dist = (-5 - camera.position.z) / _dir.current.z
+      _pos.current.copy(camera.position).addScaledVector(_dir.current, dist)
+      return { x: _pos.current.x, y: _pos.current.y }
+    }
+
+    function spawnRipple(nx, ny) {
+      const { x, y } = ndcToWorld(nx, ny)
+      const slot = rippleIdx.current % 3
+      ripples.current[slot] = { x, y, t: 0.0 }
+      rippleIdx.current++
+    }
+
+    // ── Pointer (desktop) ────────────────────────────────────────────────
     function onPointerMove(e) {
       isMovingRef.current = true
       clearTimeout(moveTimeout)
@@ -296,14 +294,13 @@ function InteractiveGrid() {
 
     function onMouseLeave() { isMovingRef.current = false }
 
-    // Ripple on click
     function onClick(e) {
       const nx =  (e.clientX / window.innerWidth)  * 2 - 1
       const ny = -(e.clientY / window.innerHeight) * 2 + 1
       spawnRipple(nx, ny)
     }
 
-    // ── Touch (mobile) ──────────────────────────────────────────────────
+    // ── Touch (mobile) ───────────────────────────────────────────────────
     function onTouchMove(e) {
       const t = e.touches[0]
       isMovingRef.current = true
@@ -336,7 +333,7 @@ function InteractiveGrid() {
       window.removeEventListener("touchmove",    onTouchMove)
       clearTimeout(moveTimeout)
     }
-  }, [])
+  }, [camera])
 
   // Grid geometry
   const isMobileScreen = typeof window !== "undefined" && window.innerWidth < 768
@@ -358,14 +355,14 @@ function InteractiveGrid() {
       }
     }
     return pos
-  }, [countX, countY])
+  }, [countX, countY, spacing])
 
   const uniforms = useMemo(() => ({
     uTime:          { value: 0 },
     uMousePos:      { value: new THREE.Vector3() },
     uMouseActive:   { value: 0 },
     uColorRest:     { value: new THREE.Color(0.02, 0.35, 0.28) },
-    uColorActive:   { value: new THREE.Color(0.55, 1.0, 0.82) },
+    uColorActive:   { value: new THREE.Color(0.35, 0.75, 0.58) },  // was 0.55,1.0,0.82 — much calmer
     // 3 ripple slots
     uRipple0Origin: { value: new THREE.Vector2(0, 0) },
     uRipple0Time:   { value: -99.0 },
@@ -375,7 +372,7 @@ function InteractiveGrid() {
     uRipple2Time:   { value: -99.0 },
   }), [])
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (!materialRef.current) return
     if (document.hidden) return    // pause on hidden tab
 
@@ -384,17 +381,23 @@ function InteractiveGrid() {
 
     u.uTime.value = timerRef.current.getElapsed()
 
-    // Update ripple times
+    // Update ripple times — advance elapsed time per slot
     const rs = ripples.current
-    u.uRipple0Origin.value.set(rs[0].x, rs[0].y)
-    u.uRipple0Time.value = rs[0].t >= 0 ? (rs[0].t += delta) : -99.0
-    u.uRipple1Origin.value.set(rs[1].x, rs[1].y)
-    u.uRipple1Time.value = rs[1].t >= 0 ? (rs[1].t += delta) : -99.0
-    u.uRipple2Origin.value.set(rs[2].x, rs[2].y)
-    u.uRipple2Time.value = rs[2].t >= 0 ? (rs[2].t += delta) : -99.0
+    rs[0].t = rs[0].t >= 0 ? rs[0].t + delta : -99.0
+    rs[1].t = rs[1].t >= 0 ? rs[1].t + delta : -99.0
+    rs[2].t = rs[2].t >= 0 ? rs[2].t + delta : -99.0
 
-    // Expire ripples after 4 seconds
-    for (const r of rs) { if (r.t > 4.0) r.t = -99.0 }
+    // Expire ripples after 4 seconds — create new object instead of mutating
+    for (let i = 0; i < 3; i++) {
+      if (rs[i].t > 4.0) ripples.current[i] = { ...rs[i], t: -99.0 }
+    }
+
+    u.uRipple0Origin.value.set(rs[0].x, rs[0].y)
+    u.uRipple0Time.value = rs[0].t
+    u.uRipple1Origin.value.set(rs[1].x, rs[1].y)
+    u.uRipple1Time.value = rs[1].t
+    u.uRipple2Origin.value.set(rs[2].x, rs[2].y)
+    u.uRipple2Time.value = rs[2].t
 
     // Mouse active lerp
     mouseActiveRef.current = THREE.MathUtils.lerp(

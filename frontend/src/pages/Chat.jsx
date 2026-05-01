@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/useAuth"
 import { api } from "../services/api"
@@ -171,7 +171,8 @@ export default function Chat() {
   const [chats, setChats]               = useState([])
   const [activeChatId, setActiveChatId] = useState(null)
   const [messages, setMessages]         = useState([])
-  const [input, setInput]               = useState("")
+
+  const inputRef                        = useRef("")
   const [waiting, setWaiting]           = useState(false)
   const [connected, setConnected]       = useState(false)
   const [loadingChats, setLoadingChats] = useState(true)
@@ -183,7 +184,8 @@ export default function Chat() {
   const [renameValue, setRenameValue]   = useState("")
   const [streamingId, setStreamingId]   = useState(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
-
+  // Derive current active chat from chats array and activeChatId
+  const activeChat = chats.find(c => c._id === activeChatId)
   const streamingContentRef = useRef("")
   const socketRef           = useRef(null)
   const bottomRef           = useRef(null)
@@ -260,15 +262,46 @@ export default function Chat() {
     return () => el.removeEventListener("scroll", handleScroll)
   }, [])
 
-  // ── Auto-resize textarea ──────────────────────────────────────────────────
+  useEffect(() => { if (renamingId) renameRef.current?.focus() }, [renamingId])
+
+  // ── Native textarea auto-resize — no React re-render ─────────────────────
+  // Also wires up visualViewport resize for mobile keyboard
   useEffect(() => {
     const el = textareaRef.current
     if (!el) return
-    el.style.height = "26px"
-    el.style.height = Math.min(el.scrollHeight, 160) + "px"
-  }, [input])
 
-  useEffect(() => { if (renamingId) renameRef.current?.focus() }, [renamingId])
+    function resize() {
+      el.style.height = "26px"
+      el.style.height = Math.min(el.scrollHeight, 160) + "px"
+    }
+
+    // Update inputRef on every native input event — zero React overhead
+    function onInput() {
+      inputRef.current = el.value
+      resize()
+    }
+
+    el.addEventListener("input", onInput)
+
+    // ── Mobile keyboard: scroll input into view when viewport shrinks ────
+    function onViewportResize() {
+      if (!document.activeElement) return
+      if (document.activeElement === el) {
+        setTimeout(() => el.scrollIntoView({ block: "nearest", behavior: "smooth" }), 80)
+      }
+    }
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", onViewportResize)
+    }
+
+    return () => {
+      el.removeEventListener("input", onInput)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("resize", onViewportResize)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     function handleOutside(e) {
@@ -316,10 +349,11 @@ export default function Chat() {
       userScrolledUpRef.current = false // snap back to bottom for new response
 
       // ── Streaming: word-chunk based with background-tab fast-flush ──────
-      const words  = clean.split(/(\s+)/)   // keep whitespace tokens
-      let wordIdx  = 0
-      const targetMs = Math.min(4000, Math.max(1800, clean.length * 2.5))
-      const delayPer = Math.max(12, targetMs / words.length)
+      const words    = clean.split(/(\s+)/)
+      let wordIdx    = 0
+      // Max 1.2s for any response — feels snappy, not sluggish
+      const targetMs = Math.min(1200, Math.max(400, clean.length * 0.8))
+      const delayPer = Math.max(8, targetMs / words.length)
 
       function typeNext() {
         if (stoppedRef.current) {
@@ -350,7 +384,7 @@ export default function Chat() {
             bottomRef.current?.scrollIntoView({ behavior: "instant" })
           }
 
-          const jitter = (Math.random() - 0.5) * delayPer * 0.6
+          const jitter = (Math.random() - 0.5) * delayPer * 0.2
           setTimeout(typeNext, Math.max(8, delayPer + jitter))
         } else {
           setStreamingId(null)
@@ -434,17 +468,22 @@ export default function Chat() {
   }
 
   const sendMessage = useCallback(() => {
-    const content = input.trim()
+    const content = inputRef.current.trim()
     if (!content || !activeChatId || waiting) return
     stoppedRef.current        = false
     userScrolledUpRef.current = false
     setMessages(prev => [...prev, {
       id: Date.now().toString(), role: "user", content, time: new Date().toISOString()
     }])
-    setInput("")
+    // Clear textarea directly + reset ref
+    if (textareaRef.current) {
+      textareaRef.current.value = ""
+      textareaRef.current.style.height = "26px"
+    }
+    inputRef.current = ""
     setWaiting(true)
     socketRef.current.emit("ai-message", { chat: activeChatId, content })
-  }, [input, activeChatId, waiting])
+  }, [activeChatId, waiting])
 
   function handleKeyDown(e) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage() }
@@ -452,8 +491,13 @@ export default function Chat() {
 
   function handlePrompt(prompt) {
     if (!activeChatId || waiting || streamingId) return
-    setInput(prompt)
-    textareaRef.current?.focus()
+    inputRef.current = prompt
+    if (textareaRef.current) {
+      textareaRef.current.value = prompt
+      textareaRef.current.style.height = "26px"
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 160) + "px"
+      textareaRef.current.focus()
+    }
   }
 
   function handleStop() {
@@ -474,7 +518,39 @@ export default function Chat() {
     navigate("/login")
   }
 
-  const activeChat = chats.find(c => c._id === activeChatId)
+  // ── Memoized messages list — only re-renders when messages/streaming change ─
+  // NOT when inputRef changes — this is the key perf fix
+  const messagesList = useMemo(() => messages.map((msg, i) => (
+    <div key={msg.id || i} className={`msg-row ${msg.role}`}>
+      {msg.role === "model" ? (
+        <div className="msg-avatar"><DexioLogo size="sm" showText={false} /></div>
+      ) : (
+        <div className="msg-avatar-user"><User size={14} /></div>
+      )}
+      <div className="msg-content">
+        {msg.role === "model" ? (
+          <>
+            <div className={`msg-bubble-ai${streamingId === msg.id ? " streaming" : ""}`}>
+              <ReactMarkdown components={MarkdownComponents}>{msg.content}</ReactMarkdown>
+            </div>
+            <div className="msg-meta">
+              <button className="btn-copy" onClick={() => handleCopyMessage(msg.content)}>
+                <Copy size={11} /> Copy
+              </button>
+              <span className="msg-time">{formatTime(msg.time)}</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="msg-bubble-user">{msg.content}</div>
+            <div className="msg-meta msg-meta-user">
+              <span className="msg-time">{formatTime(msg.time)}</span>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )), [messages, streamingId])
   const initials   = user
     ? `${user.fullName?.firstName?.[0] ?? ""}${user.fullName?.lastName?.[0] ?? ""}`.toUpperCase()
     : "?"
@@ -644,45 +720,7 @@ export default function Chat() {
 
             ) : (
               <>
-                {messages.map((msg, i) => (
-                  <div key={msg.id || i} className={`msg-row ${msg.role}`}>
-
-                    {msg.role === "model" ? (
-                      <div className="msg-avatar">
-                        <DexioLogo size="sm" showText={false} />
-                      </div>
-                    ) : (
-                      <div className="msg-avatar-user"><User size={14} /></div>
-                    )}
-
-                    <div className="msg-content">
-                      {msg.role === "model" ? (
-                        <>
-                          <div className={`msg-bubble-ai${streamingId === msg.id ? " streaming" : ""}`}>
-                            <ReactMarkdown components={MarkdownComponents}>
-                              {msg.content}
-                            </ReactMarkdown>
-                          </div>
-                          {/* Copy + time row under AI bubble */}
-                          <div className="msg-meta">
-                            <button className="btn-copy" onClick={() => handleCopyMessage(msg.content)}>
-                              <Copy size={11} /> Copy
-                            </button>
-                            <span className="msg-time">{formatTime(msg.time)}</span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="msg-bubble-user">{msg.content}</div>
-                          <div className="msg-meta msg-meta-user">
-                            <span className="msg-time">{formatTime(msg.time)}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                  </div>
-                ))}
+                {messagesList}
 
                 {waiting && (
                   <div className="msg-row model">
@@ -724,10 +762,9 @@ export default function Chat() {
                 ref={textareaRef}
                 rows={1}
                 placeholder={activeChatId ? "Ask Dexio anything…" : "Select or create a chat first"}
-                value={input}
-                onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 disabled={!activeChatId || waiting}
+                defaultValue=""
               />
               {waiting ? (
                 <button className="btn-stop" onClick={handleStop} title="Stop generating">
@@ -737,7 +774,7 @@ export default function Chat() {
                 <button
                   className="btn-send"
                   onClick={sendMessage}
-                  disabled={!input.trim() || !activeChatId}
+                  disabled={!inputRef.current.trim() || !activeChatId}
                   aria-label="Send"
                 >
                   <Send size={15} />
