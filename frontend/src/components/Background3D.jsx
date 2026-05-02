@@ -218,6 +218,7 @@ function makeRipple() { return { x: 0, y: 0, t: -99.0 } }
 function InteractiveGrid({ variant }) {
   const { camera } = useThree()
   const matRef     = useRef(null)
+  const meshRef    = useRef(null)
 
   const pointerRef      = useRef(new THREE.Vector2(0, 0))
   const targetMousePos  = useRef(new THREE.Vector3(0, 0, 0))
@@ -231,14 +232,6 @@ function InteractiveGrid({ variant }) {
   const rippleIdx       = useRef(0)
   const timeRef         = useRef(0)
   const lastTouchTime   = useRef(0)
-  // Store initial camera Y so sway is relative, not hardcoded
-  const baseCamY        = useRef(camera.position.y)
-  const baseCamX        = useRef(camera.position.x)
-
-  useEffect(() => {
-    baseCamY.current = camera.position.y
-    baseCamX.current = camera.position.x
-  }, [camera])
 
   useEffect(() => {
     let moveTimeout
@@ -364,18 +357,34 @@ function InteractiveGrid({ variant }) {
     targetMousePos.current.lerp(_pos.current, 0.07)
     u.uMousePos.value.copy(targetMousePos.current)
 
-    // ── Camera parallax sway ────────────────────────────────────────────
-    // chat: look slightly right to account for sidebar occupying left side
-    const lookTargetX = variant === "chat" ? 1.5 : 0
-    // Sway relative to initial camera position — not hardcoded
-    camera.position.x = THREE.MathUtils.lerp(camera.position.x, baseCamX.current + pointerRef.current.x * 0.4, 0.04)
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, baseCamY.current + pointerRef.current.y * 0.3, 0.04)
-    // lookAt every frame — converts position shift into proper rotation parallax
-    camera.lookAt(lookTargetX, 0, -6)
+    // Apply parallax on the grid mesh instead of mutating camera from hook state.
+    if (meshRef.current) {
+      const xBias = variant === "chat" ? -0.6 : 0
+      meshRef.current.position.x = THREE.MathUtils.lerp(
+        meshRef.current.position.x,
+        xBias + pointerRef.current.x * 0.35,
+        0.05
+      )
+      meshRef.current.position.y = THREE.MathUtils.lerp(
+        meshRef.current.position.y,
+        pointerRef.current.y * 0.22,
+        0.05
+      )
+      meshRef.current.rotation.y = THREE.MathUtils.lerp(
+        meshRef.current.rotation.y,
+        pointerRef.current.x * 0.06,
+        0.05
+      )
+      meshRef.current.rotation.x = THREE.MathUtils.lerp(
+        meshRef.current.rotation.x,
+        -pointerRef.current.y * 0.05,
+        0.05
+      )
+    }
   })
 
   return (
-    <mesh position={[0, 0, -6]}>
+    <mesh ref={meshRef} position={[0, 0, -6]}>
       <planeGeometry args={[80, 50, SEGMENTS_X, SEGMENTS_Y]} />
       <shaderMaterial
         ref={matRef}
